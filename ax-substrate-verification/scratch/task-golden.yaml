@@ -1,0 +1,11 @@
+apiVersion: ax.dev/v1alpha1
+kind: Task
+metadata:
+  name: golden-task
+  atespace: default
+spec:
+  image: localhost:5001/ax-task-runner:e2e
+  command:
+    - sleep
+    - "3600"
+  debug: true

@@ -1,0 +1,52 @@
+=== Current Context ===
+kind-ax-e2e
+
+=== All Pods Wide ===
+NAMESPACE                          NAME                                           READY   STATUS      RESTARTS   AGE     IP            NODE                   NOMINATED NODE   READINESS GATES
+ate-system                         ate-api-server-6d7475c849-7csgp                2/2     Running     0          4h21m   10.244.0.12   ax-e2e-control-plane   <none>           <none>
+ate-system                         ate-api-server-6d7475c849-ggfrg                2/2     Running     0          4h21m   10.244.0.8    ax-e2e-control-plane   <none>           <none>
+ate-system                         ate-controller-5b7c985995-wsrdm                1/1     Running     0          4h21m   10.244.0.9    ax-e2e-control-plane   <none>           <none>
+ate-system                         ate-idp-server-56cbb9995b-ggmq7                1/1     Running     0          4h21m   10.244.0.10   ax-e2e-control-plane   <none>           <none>
+ate-system                         ate-idp-server-56cbb9995b-m2zm8                1/1     Running     0          4h21m   10.244.0.11   ax-e2e-control-plane   <none>           <none>
+ate-system                         atelet-nf6sx                                   2/2     Running     0          4h21m   10.244.0.13   ax-e2e-control-plane   <none>           <none>
+ate-system                         atenet-egress-657f9b4c7-9jrn4                  3/3     Running     0          4h21m   10.244.0.21   ax-e2e-control-plane   <none>           <none>
+ate-system                         atenet-router-848dc44ddc-s4bk9                 2/2     Running     0          4h21m   10.244.0.14   ax-e2e-control-plane   <none>           <none>
+ate-system                         postgres-0                                     2/2     Running     0          5h19m   10.244.0.7    ax-e2e-control-plane   <none>           <none>
+ate-system                         rustfs-54c86945fb-srb69                        1/1     Running     0          4h21m   10.244.0.20   ax-e2e-control-plane   <none>           <none>
+ate-system                         rustfs-bucket-init-9v5qm                       0/1     Completed   0          4h21m   10.244.0.17   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-postgres-0                                  1/1     Running     0          4h14m   10.244.0.27   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-server-66856fdbbd-hdtzr                     1/1     Running     0          3h25m   10.244.0.30   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-workers-67d7655948-6dwnn                    1/1     Running     0          4h15m   10.244.0.22   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-workers-67d7655948-n45gq                    1/1     Running     0          4h15m   10.244.0.24   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-workers-67d7655948-vlh7z                    1/1     Running     0          4h15m   10.244.0.25   ax-e2e-control-plane   <none>           <none>
+ax-system                          ax-workers-67d7655948-w649t                    1/1     Running     0          4h15m   10.244.0.23   ax-e2e-control-plane   <none>           <none>
+kube-system                        coredns-559f6c778d-f7c65                       1/1     Running     0          5h22m   10.244.0.4    ax-e2e-control-plane   <none>           <none>
+kube-system                        coredns-559f6c778d-x9g94                       1/1     Running     0          5h22m   10.244.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        etcd-ax-e2e-control-plane                      1/1     Running     0          5h23m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        kindnet-d4kdf                                  1/1     Running     0          5h22m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        kube-apiserver-ax-e2e-control-plane            1/1     Running     0          5h23m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        kube-controller-manager-ax-e2e-control-plane   1/1     Running     0          5h23m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        kube-proxy-mqmgx                               1/1     Running     0          5h22m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+kube-system                        kube-scheduler-ax-e2e-control-plane            1/1     Running     0          5h23m   172.18.0.2    ax-e2e-control-plane   <none>           <none>
+local-path-storage                 local-path-provisioner-75f7fc7dc5-qnx6m        1/1     Running     0          5h22m   10.244.0.3    ax-e2e-control-plane   <none>           <none>
+otel-system                        jaeger-fb9948ddf-6qzfx                         1/1     Running     0          4h21m   10.244.0.15   ax-e2e-control-plane   <none>           <none>
+otel-system                        opentelemetry-collector-6f5b87f5dd-v2ncz       1/1     Running     0          4h21m   10.244.0.18   ax-e2e-control-plane   <none>           <none>
+otel-system                        prometheus-5b5fb67d57-jg7fx                    1/1     Running     0          4h21m   10.244.0.19   ax-e2e-control-plane   <none>           <none>
+podcertificate-controller-system   podcertificate-controller-767999498b-mbj5z     1/1     Running     0          5h19m   10.244.0.5    ax-e2e-control-plane   <none>           <none>
+
+=== Installed CRDs ===
+NAME                       SCOPE        VERSIONS      CREATED AT
+csidriverconfigs.ate.dev   Cluster      v1(storage)   2026-10-28T06:17:38Z
+sandboxconfigs.ate.dev     Cluster      v1(storage)   2026-10-28T06:17:38Z
+workerpools.ate.dev        Namespaced   v1(storage)   2026-10-28T06:17:39Z
+
+=== AX Git State ===
+4b7bf6f84cac7eb12f21b87a76c8dc85155dce38
+
+=== Substrate Git State ===
+67c6a6b344533587122fdebc0f0444d56fc17c94
+
+=== Recent Events (last 20) ===
+NAMESPACE     LAST SEEN   TYPE      REASON      OBJECT                            MESSAGE
+ate-system    66s         Warning   Unhealthy   pod/atelet-nf6sx                  Readiness probe failed: Get "http://10.244.0.13:9091/readyz": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+otel-system   65s         Warning   Unhealthy   pod/prometheus-5b5fb67d57-jg7fx   Readiness probe failed: Get "http://10.244.0.19:9090/-/ready": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
