@@ -1,0 +1,4 @@
+=== TC-LIN-01: Snapshot Lineage & Safety Contract Analysis ===
+✓ Script defines complete lineage sequence: create seed -> suspend -> tag -> borrow clone -> delete tag
+✓ Script enforces invariant: Clone directly borrows tag snapshot URI prefix
+✓ Substrate ateapi tag controller includes FAILED_PRECONDITION check on deleting tag (PR #3340)

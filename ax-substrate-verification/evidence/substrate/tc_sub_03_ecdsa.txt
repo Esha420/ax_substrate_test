@@ -1,0 +1,9 @@
+=== TC-SUB-03: ECDSA P-256 Workload Identity Verification ===
+✓ Verified commit 28520c0d: 28520c0d Generate the actor identity CA with ECDSA P-256 so external relying parties accept it (#3251)
+P256 references in cmd/ateapi:
+cmd/ateapi/internal/controlapi/actor_test.go:	ca, err := localca.GenerateCA("1", localca.KeyTypeECDSAP256, 24*time.Hour)
+cmd/ateapi/internal/controlapi/actor_test.go:	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+cmd/ateapi/internal/controlapi/dialer_test.go:	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+cmd/ateapi/internal/controlapi/dialer_test.go:	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+cmd/ateapi/internal/controlapi/functionaltest/common_test.g
+✓ ECDSA P-256 curve referenced for certificate signing

@@ -1,0 +1,35 @@
+=== TC-SUB-01: Worker-Level OOM Isolation ===
+✓ cmd/ateworker-gvisor/memlimit.go uses memory.high and cgroup.kill
+✓ internal/ateworker/cgroup/memwatch.go monitors memory.pressure
+Command: go test -v ./internal/ateworker/cgroup/... -run TestMemoryWatch|TestCPUMax|TestOpenActorLeaf
+Exit Code: 0
+=== RUN   TestCPUMax
+--- PASS: TestCPUMax (0.00s)
+=== RUN   TestOpenActorLeafReusesAndResetsALeftover
+--- PASS: TestOpenActorLeafReusesAndResetsALeftover (0.00s)
+=== RUN   TestOpenActorLeafWithoutTheCPUController
+--- PASS: TestOpenActorLeafWithoutTheCPUController (0.00s)
+=== RUN   TestMemoryWatch
+=== RUN   TestMemoryWatch/stuck_at_the_limit
+=== RUN   TestMemoryWatch/stuck_but_dipping_under_the_limit
+=== RUN   TestMemoryWatch/at_the_limit_but_making_progress
+=== RUN   TestMemoryWatch/over_on_page_cache
+=== RUN   TestMemoryWatch/stalled_without_hitting_its_limit
+=== RUN   TestMemoryWatch/far_over_the_limit_is_killed_at_once
+=== RUN   TestMemoryWatch/stalls_age_out_of_the_window
+--- PASS: TestMemoryWatch (0.01s)
+    --- PASS: TestMemoryWatch/stuck_at_the_limit (0.00s)
+    --- PASS: TestMemoryWatch/stuck_but_dipping_under_the_limit (0.00s)
+    --- PASS: TestMemoryWatch/at_the_limit_but_making_progress (0.00s)
+    --- PASS: TestMemoryWatch/over_on_page_cache (0.00s)
+    --- PASS: TestMemoryWatch/stalled_without_hitting_its_limit (0.00s)
+    --- PASS: TestMemoryWatch/far_over_the_limit_is_killed_at_once (0.00s)
+    --- PASS: TestMemoryWatch/stalls_age_out_of_the_window (0.00s)
+=== RUN   TestMemoryWatchCapsOvershoot
+--- PASS: TestMemoryWatchCapsOvershoot (0.00s)
+=== RUN   TestMemoryWatchMissingCgroup
+--- PASS: TestMemoryWatchMissingCgroup (0.00s)
+PASS
+ok  	go.ate.dev/substrate/internal/ateworker/cgroup	(cached)
+
+✓ cgroup memwatch unit tests passed

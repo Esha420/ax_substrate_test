@@ -1,0 +1,97 @@
+[
+  {
+    "timestamp": "2026-10-28T07:28:30.239856+00:00",
+    "step": "1. CLUSTER_CHECK",
+    "detail": "Inspecting pods in namespace ax-system..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:30.316661+00:00",
+    "step": "PODS",
+    "detail": "Pods in ax-system:\nNAME                          READY   STATUS    RESTARTS   AGE     IP            NODE                   NOMINATED NODE   READINESS GATES\nax-postgres-0                 1/1     Running   0          4m27s   10.244.0.27   ax-e2e-control-plane   <none>           <none>\nax-server-85f4787f6b-wvdz6    1/1     Running   0          52s     10.244.0.28   ax-e2e-control-plane   <none>           <none>\nax-workers-67d7655948-6dwnn   1/1     Running   0          5m41s   10.244.0.22   ax-e2e-control-plane   <none>           <none>\nax-workers-67d7655948-n45gq   1/1     Running   0          5m41s   10.244.0.24   ax-e2e-control-plane   <none>           <none>\nax-workers-67d7655948-vlh7z   1/1     Running   0          5m41s   10.244.0.25   ax-e2e-control-plane   <none>           <none>\nax-workers-67d7655948-w649t   1/1     Running   0          5m41s   10.244.0.23   ax-e2e-control-plane   <none>           <none>"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:32.243806+00:00",
+    "step": "2. DB_CONNECT",
+    "detail": "Verifying connection to statefulset/ax-postgres in ax-system..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:32.455879+00:00",
+    "step": "PG_VERSION",
+    "detail": "Native AX Postgres: PostgreSQL 17.11 on x86_64-pc-linux-musl"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:33.469427+00:00",
+    "step": "3. DB_SCHEMA",
+    "detail": "Inspecting tables created by AX in deployed PostgreSQL..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:33.601932+00:00",
+    "step": "TABLES",
+    "detail": "Public tables in deployed ax-postgres: locks, models, tasks, workspaces"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:33.748172+00:00",
+    "step": "TASKS_COLUMNS",
+    "detail": "tasks columns: atespace|text; name|text; data|jsonb; saved_at|timestamp with time zone"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:33.903304+00:00",
+    "step": "LOCKS_COLUMNS",
+    "detail": "locks columns: key|text; token|text; expires_at|timestamp with time zone"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:33.903397+00:00",
+    "step": "4. TASK_PERSISTENCE",
+    "detail": "Inserting test task 'demo-in-cluster-task' into deployed ax-postgres..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:34.235883+00:00",
+    "step": "PRE_RESTART",
+    "detail": "Task stored before ax-server rollout: demo-in-cluster-task|golang:1.22|2026-10-28 07:28:34.053535+00"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:35.354835+00:00",
+    "step": "RESTART_SERVER",
+    "detail": "Executing 'kubectl rollout restart deployment/ax-server -n ax-system'..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:35.576190+00:00",
+    "step": "WAIT_ROLLOUT",
+    "detail": "Waiting for ax-server deployment rollout to complete..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:45.627059+00:00",
+    "step": "SERVER_READY",
+    "detail": "ax-server restarted and running with new pod."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:50.409271+00:00",
+    "step": "POST_RESTART",
+    "detail": "Task retrieved after ax-server restart: demo-in-cluster-task|golang:1.22|2026-10-28 07:28:34.053535+00"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:51.413208+00:00",
+    "step": "5. LEASED_LOCKS",
+    "detail": "Testing leased lock lifecycle (Acquisition, Contention, Renewal, Expiration)..."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:51.801193+00:00",
+    "step": "LOCK_ACQUIRED",
+    "detail": "Worker A acquired leased lock: reconciler/task/demo-in-cluster-task|worker-replica-a-lock|t"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:53.238818+00:00",
+    "step": "LOCK_CONTENTION",
+    "detail": "Worker B attempted acquisition during active lease. Blocked? True (Current owner: worker-replica-a-lock)"
+  },
+  {
+    "timestamp": "2026-10-28T07:28:54.909129+00:00",
+    "step": "LOCK_RENEWAL",
+    "detail": "Worker A successfully renewed lease for +5s."
+  },
+  {
+    "timestamp": "2026-10-28T07:28:56.455277+00:00",
+    "step": "LOCK_TAKEOVER",
+    "detail": "Expired lease takeover by Worker B: Current owner is worker-replica-b-contender"
+  }
+]

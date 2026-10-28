@@ -1,0 +1,2 @@
+=== TC-SUB-04: Strict SPIFFE mTLS Networking ===
+✓ Verified commit 1756c0f7: 1756c0f7 benchmarking: dial atenet-router over SPIFFE mTLS on port 443 (#3089)

@@ -1,0 +1,44 @@
+=== TC-AX-02: Direct Substrate Actor Observation ===
+Command: go test -v ./internal/server/ -run TestSetActorStatus|TestServer_ReadsActorStateFromSubstrate|TestTasksGoThroughHelpers
+Exit Code: 0
+=== RUN   TestSetActorStatus
+=== RUN   TestSetActorStatus/running
+=== RUN   TestSetActorStatus/setting-up
+=== RUN   TestSetActorStatus/suspended
+=== RUN   TestSetActorStatus/crashed
+=== RUN   TestSetActorStatus/reverting
+=== RUN   TestSetActorStatus/suspending
+=== RUN   TestSetActorStatus/deleting
+=== RUN   TestSetActorStatus/odd
+=== RUN   TestSetActorStatus/gone
+=== RUN   TestSetActorStatus/failed
+=== RUN   TestSetActorStatus/not-yet
+=== RUN   TestSetActorStatus/crash_message
+=== RUN   TestSetActorStatus/stable_update_time
+--- PASS: TestSetActorStatus (0.00s)
+    --- PASS: TestSetActorStatus/running (0.00s)
+    --- PASS: TestSetActorStatus/setting-up (0.00s)
+    --- PASS: TestSetActorStatus/suspended (0.00s)
+    --- PASS: TestSetActorStatus/crashed (0.00s)
+    --- PASS: TestSetActorStatus/reverting (0.00s)
+    --- PASS: TestSetActorStatus/suspending (0.00s)
+    --- PASS: TestSetActorStatus/deleting (0.00s)
+    --- PASS: TestSetActorStatus/odd (0.00s)
+    --- PASS: TestSetActorStatus/gone (0.00s)
+    --- PASS: TestSetActorStatus/failed (0.00s)
+    --- PASS: TestSetActorStatus/not-yet (0.00s)
+    --- PASS: TestSetActorStatus/crash_message (0.00s)
+    --- PASS: TestSetActorStatus/stable_update_time (0.00s)
+=== RUN   TestSetActorStatus_SubstrateErrorReportsUnknown
+2026/10/28 10:57:27 WARN could not read task actor atespace=default task=a error=denied
+2026/10/28 10:57:27 WARN could not read task actor atespace=default task=b error=denied
+--- PASS: TestSetActorStatus_SubstrateErrorReportsUnknown (0.00s)
+=== RUN   TestTasksGoThroughHelpers
+--- PASS: TestTasksGoThroughHelpers (0.00s)
+=== RUN   TestServer_ReadsActorStateFromSubstrate
+--- PASS: TestServer_ReadsActorStateFromSubstrate (0.00s)
+PASS
+ok  	github.com/google/ax/internal/server	(cached)
+
+✓ Server direct Substrate observation tests passed
+✓ server.go directly calls Substrate GetActor on retrieval

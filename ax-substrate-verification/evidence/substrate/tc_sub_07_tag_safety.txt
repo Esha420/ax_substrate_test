@@ -1,0 +1,3 @@
+=== TC-SUB-07: Guarded Tag Lifecycle Safety ===
+✓ Verified commit 006b0af5 (#3340): 006b0af5 Update a deleting tag returns FAILED_PRECONDITION (#3340)
+✓ cmd/ateapi/internal/controlapi/tag.go enforces FailedPrecondition on deleting tags

@@ -1,0 +1,92 @@
+[
+  {
+    "timestamp": "2026-10-28T05:46:25.182803+00:00",
+    "step": "1. PREPARE",
+    "detail": "Checking AX commit, PostgreSQL container and schema requirements"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:25.185171+00:00",
+    "step": "COMMIT",
+    "detail": "AX commit: 4b7bf6f84cac7eb12f21b87a76c8dc85155dce38"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:25.579183+00:00",
+    "step": "DATABASE",
+    "detail": "Connected to PostgreSQL: PostgreSQL 17.11"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:26.751345+00:00",
+    "step": "2. TEST_SUITE",
+    "detail": "Executing AX internal/store/postgres test suite against running database..."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.048866+00:00",
+    "step": "SUITE_PASS",
+    "detail": "All 4 PostgreSQL tests passed: Schema Concurrent, List Newest First, Lock Renewal, Lock Takeover"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.048928+00:00",
+    "step": "3. DB_INSPECTION",
+    "detail": "Inspecting tables created by AX in PostgreSQL..."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.133099+00:00",
+    "step": "TABLES",
+    "detail": "Public tables present: locks, models, tasks, workspaces"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.231801+00:00",
+    "step": "TASKS_SCHEMA",
+    "detail": "tasks columns: atespace|text; name|text; data|jsonb; saved_at|timestamp with time zone"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.320237+00:00",
+    "step": "LOCKS_SCHEMA",
+    "detail": "locks columns: key|text; token|text; expires_at|timestamp with time zone"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.320280+00:00",
+    "step": "4. TASK_PERSISTENCE",
+    "detail": "Inserting test task 'demo-persist-task' with JSONB payload..."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:27.495250+00:00",
+    "step": "PRE_RESTART",
+    "detail": "Task retrieved before restart: demo-persist-task|golang:1.22|2026-10-28 05:46:27.40562+00"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:28.495779+00:00",
+    "step": "SIMULATE_RESTART",
+    "detail": "Simulating AX server shutdown & restart (terminating backend pool connections)..."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:29.654260+00:00",
+    "step": "POST_RESTART",
+    "detail": "Task retrieved after restart: demo-persist-task|golang:1.22|2026-10-28 05:46:27.40562+00"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:30.654762+00:00",
+    "step": "5. LEASED_LOCKS",
+    "detail": "Testing leased lock lifecycle: Acquisition, Contention, Renewal, Expiration..."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:30.843893+00:00",
+    "step": "LOCK_ACQUIRED",
+    "detail": "Client A acquired lock: reconciler/task/demo-persist-task|token-client-a-1234|t"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:32.071169+00:00",
+    "step": "LOCK_CONTENTION",
+    "detail": "Client B attempted acquisition during active lease. Blocked? True (Current owner: token-client-a-1234)"
+  },
+  {
+    "timestamp": "2026-10-28T05:46:33.153618+00:00",
+    "step": "LOCK_RENEWAL",
+    "detail": "Client A successfully renewed lease for +5 seconds."
+  },
+  {
+    "timestamp": "2026-10-28T05:46:34.424259+00:00",
+    "step": "LOCK_TAKEOVER",
+    "detail": "Expired lease takeover by Client B: Owner is now token-client-b-5678"
+  }
+]

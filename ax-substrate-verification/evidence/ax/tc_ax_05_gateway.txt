@@ -1,0 +1,3 @@
+=== TC-AX-05: Gateway CRD Removal ===
+✓ No Gateway message defined in ax.proto
+✓ Commit 0b5427c verified: 0b5427c Remove Gateway concept to avoid bifurcation with Substrate (#395)

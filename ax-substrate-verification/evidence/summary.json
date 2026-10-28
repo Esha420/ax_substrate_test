@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-10-28T07:29:22.033123+00:00",
+  "duration_seconds": 4.62415,
+  "ax_commit": "4b7bf6f84cac7eb12f21b87a76c8dc85155dce38",
+  "substrate_commit": "67c6a6b344533587122fdebc0f0444d56fc17c94",
+  "total": 15,
+  "passed": 15,
+  "failures": 0,
+  "errors": 0
+}

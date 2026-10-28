@@ -1,0 +1,3 @@
+=== TC-AX-04: WatchTask Removal & Polling Standardization ===
+✓ WatchTask RPC and request/response messages removed from ax.proto
+✓ cmd/ax/main.go has no runWatch / watch subcommand

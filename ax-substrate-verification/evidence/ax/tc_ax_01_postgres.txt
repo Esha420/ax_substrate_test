@@ -1,0 +1,9 @@
+=== TC-AX-01: PostgreSQL Migration Verification ===
+✓ internal/store/redis/ is completely removed
+✓ Found postgres store file: store.go
+✓ Found postgres store file: schema.sql
+✓ Found postgres store file: schema.go
+✓ Found postgres store file: lock.go
+✓ Found postgres store file: store_test.go
+✓ schema.sql defines tasks with jsonb and locks with leased expires_at
+✓ store.go uses pgx/v5 and protojson serialization

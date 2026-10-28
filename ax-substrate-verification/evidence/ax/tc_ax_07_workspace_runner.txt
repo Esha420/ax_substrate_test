@@ -1,0 +1,3 @@
+=== TC-AX-07: Single Workspace & Runner Tolerance ===
+✓ TestCreateTask_ValidatesWorkspaceBinding passed (at most 1 workspace enforced)
+✓ runner tests pass with unknown field tolerance

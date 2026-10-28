@@ -1,0 +1,2 @@
+=== TC-AX-06: Interactive SSH Signal Passthrough ===
+✓ cmd/ax/main.go includes terminal/signal handling for ax ssh

@@ -1,0 +1,13 @@
+=== TC-SUB-02: CNCF DCO Governance Verification ===
+✓ CONTRIBUTING.md specifies Developer Certificate of Origin (DCO) and git commit -s
+✓ Commits with Signed-off-by found:
+67c6a6b3 [bugbash] hack/teardown.sh: add --cluster-scoped to tear down one cluster (#3296)
+7a193743 e2e: test RevertActor across multiple durable snapshot generations (#3338)
+006b0af5 Update a deleting tag returns FAILED_PRECONDITION (#3340)
+6aa6a750 Update gVisor to release 20261026.0 (#3364)
+c093a40c Add kubectl ate proxy actor command. (#3191)
+b5d72014 ate-setup: separate e2e kustomize component from kind overlay (#3318)
+2e931ec5 Rename --cordon-control-plane to --cordon-system-infra-components and its node pool label to ate-system-infra (#3210)
+7e6476cb atelet, ateworker: finish a checkpoint retry after atelet restarts (#3218)
+a54dc8dd Releases publish the envoy-dataplane image (#3252)
+8f664b59 MicroVM guests get their whole memory limit, and placement books each actor's runtime overhead (#3104)
