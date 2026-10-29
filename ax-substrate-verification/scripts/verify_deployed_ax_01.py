@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-BASE_DIR = Path("/home/berrybytes/Office/Assignment")
+BASE_DIR = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
 VERIF_DIR = BASE_DIR / "ax-substrate-verification"
 EVIDENCE_DIR = VERIF_DIR / "evidence" / "ax"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)

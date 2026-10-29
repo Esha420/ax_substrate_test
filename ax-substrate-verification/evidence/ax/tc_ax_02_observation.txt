@@ -30,13 +30,23 @@ Exit Code: 0
     --- PASS: TestSetActorStatus/crash_message (0.00s)
     --- PASS: TestSetActorStatus/stable_update_time (0.00s)
 === RUN   TestSetActorStatus_SubstrateErrorReportsUnknown
-2026/10/28 10:57:27 WARN could not read task actor atespace=default task=a error=denied
-2026/10/28 10:57:27 WARN could not read task actor atespace=default task=b error=denied
+2026/10/29 09:55:59 WARN could not read task actor atespace=default task=a error=denied
+2026/10/29 09:55:59 WARN could not read task actor atespace=default task=b error=denied
 --- PASS: TestSetActorStatus_SubstrateErrorReportsUnknown (0.00s)
 === RUN   TestTasksGoThroughHelpers
 --- PASS: TestTasksGoThroughHelpers (0.00s)
 === RUN   TestServer_ReadsActorStateFromSubstrate
---- PASS: TestServer_ReadsActorStateFromSubstrate (0.00s)
+2026/10/29 09:55:59 INFO reconciling task name=observed-a atespace=default image=alpine
+2026/10/29 09:55:59 INFO ensuring custom ActorTemplate for task image=alpine
+2026/10/29 09:55:59 INFO using custom ActorTemplate for actor templateAtespace=default templateName=observed-a-tmpl-72df30ab
+2026/10/29 09:55:59 INFO suspending actor on Substrate actor=observed-a
+2026/10/29 09:55:59 INFO task successfully suspended name=observed-a actor=observed-a
+2026/10/29 09:55:59 INFO reconciling task name=observed-b atespace=default image=alpine
+2026/10/29 09:55:59 INFO ensuring custom ActorTemplate for task image=alpine
+2026/10/29 09:55:59 INFO using custom ActorTemplate for actor templateAtespace=default templateName=observed-b-tmpl-e2d402fd
+2026/10/29 09:55:59 INFO suspending actor on Substrate actor=observed-b
+2026/10/29 09:55:59 INFO task successfully suspended name=observed-b actor=observed-b
+--- PASS: TestServer_ReadsActorStateFromSubstrate (0.01s)
 PASS
 ok  	github.com/google/ax/internal/server	(cached)
 

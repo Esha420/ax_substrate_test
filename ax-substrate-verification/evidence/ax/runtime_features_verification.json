@@ -1,0 +1,56 @@
+{
+  "1_ax_persistence_and_recovery": {
+    "status": "PASS",
+    "task_name": "golden-task",
+    "token": "PERSIST_TOKEN_1793255513",
+    "postgres_record": "golden-task|default|task-golden-task-1793250135",
+    "continued_execution": true
+  },
+  "2_ax_to_substrate_execution": {
+    "status": "PASS",
+    "task_name": "e2e-feature-task",
+    "workload_output": "CALC_VAL= 120",
+    "grpc_boundary": {
+      "status": "PASS",
+      "service_registered": "ateapi.Control",
+      "cluster_substrate_version": "v0.6.0 (d3f2363590a1)",
+      "upstream_substrate_main_service": "substrate.ateapi.v1.Control",
+      "note": "Aligned cluster uses ateapi.Control matching AX client."
+    }
+  },
+  "3_worker_failure_and_recovery": {
+    "status": "PASS",
+    "terminated_worker": "ax-workers-58ff96d9d6-84ldz",
+    "recovered_worker_ip": "10.244.0.54",
+    "recovery_verified": true
+  },
+  "4_runtime_isolation_and_authorization": {
+    "status": "PASS",
+    "process_isolation": true,
+    "workspace_isolation": true,
+    "dns_restricted": true,
+    "k8s_api_auth_denied": true
+  },
+  "5_suspend_snapshot_resume": {
+    "status": "PASS",
+    "task_name": "golden-task",
+    "state_token": "STATE_CHECKPOINT_1793255549",
+    "persisted_across_suspend": true
+  },
+  "6_observability_and_scope": {
+    "status": "PASS",
+    "jaeger_services": [
+      "atecontroller",
+      "atenet-router",
+      "atenet-router-envoy",
+      "atelet",
+      "objectstore-plugin-node",
+      "jaeger-all-in-one",
+      "objectstore-plugin-control",
+      "ateapi",
+      "ateworker-gvisor"
+    ],
+    "prometheus_targets_count": 6,
+    "substrate_scope_online": true
+  }
+}

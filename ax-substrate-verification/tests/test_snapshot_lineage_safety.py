@@ -12,7 +12,7 @@ import sys
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path("/home/berrybytes/Office/Assignment")
+REPO_ROOT = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
 SCRIPT_PATH = REPO_ROOT / "test_snapshot_lineage.sh"
 EVIDENCE_DIR = REPO_ROOT / "ax-substrate-verification" / "evidence" / "substrate"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,11 @@
+apiVersion: ax.dev/v1alpha1
+kind: Task
+metadata:
+  name: runtime-exec-task
+  atespace: default
+spec:
+  image: localhost:5001/ax-task-runner:e2e@sha256:765ac5457c08c58997dcad43db1f727a6d28516bb0dce764998723000036c187
+  command:
+    - sleep
+    - "1800"
+  debug: true

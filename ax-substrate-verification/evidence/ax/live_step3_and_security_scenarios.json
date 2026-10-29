@@ -1,0 +1,31 @@
+{
+  "step_3_golden_task": {
+    "status": "PASS",
+    "task_name": "golden-task",
+    "phase": "Running",
+    "describe_output": "Name:         golden-task\nAtespace:     default\nPhase:        Running\nActor:        golden-task\nWorker IP:    10.244.0.41\nImage:        localhost:5001/ax-task-runner:e2e@sha256:765ac5457c08c58997dcad43db1f727a6d28516bb0dce764998723000036c187\nCommand:      [sleep 3600]\n\nConditions:\n  TYPE            STATUS  REASON         MESSAGE\n  WorkspaceReady  True    SetupComplete  Workspace setup completed at 10.244.0.41\n  Ready           True    TaskRunning    Task is running and its workspace is ready"
+  },
+  "tc_ax_07": {
+    "status": "PASS",
+    "contract": "at most 1 workspace per task",
+    "unit_test_result": "PASS"
+  },
+  "tc_ax_03": {
+    "status": "PASS",
+    "forbidden_tokens_checked": [
+      "GEMINI_API_KEY",
+      "AX_ROOT_TOKEN",
+      "SUBSTRATE_ADMIN_KEY",
+      "AWS_SECRET_ACCESS_KEY",
+      "GOOGLE_APPLICATION_CREDENTIALS"
+    ],
+    "tokens_found": [],
+    "service_account_mounted": false,
+    "k8s_api_isolated": true
+  },
+  "tc_ax_06": {
+    "status": "PASS",
+    "kernel": "Linux actor 4.19.0-gvisor #1 SMP Sun Jan 10 15:06:54 PST 2016 x86_64 GNU/Linux",
+    "stdin_forwarding_verified": true
+  }
+}

@@ -1,13 +1,13 @@
 === TC-SUB-02: CNCF DCO Governance Verification ===
 ✓ CONTRIBUTING.md specifies Developer Certificate of Origin (DCO) and git commit -s
 ✓ Commits with Signed-off-by found:
-67c6a6b3 [bugbash] hack/teardown.sh: add --cluster-scoped to tear down one cluster (#3296)
-7a193743 e2e: test RevertActor across multiple durable snapshot generations (#3338)
-006b0af5 Update a deleting tag returns FAILED_PRECONDITION (#3340)
-6aa6a750 Update gVisor to release 20261026.0 (#3364)
-c093a40c Add kubectl ate proxy actor command. (#3191)
-b5d72014 ate-setup: separate e2e kustomize component from kind overlay (#3318)
-2e931ec5 Rename --cordon-control-plane to --cordon-system-infra-components and its node pool label to ate-system-infra (#3210)
-7e6476cb atelet, ateworker: finish a checkpoint retry after atelet restarts (#3218)
-a54dc8dd Releases publish the envoy-dataplane image (#3252)
-8f664b59 MicroVM guests get their whole memory limit, and placement books each actor's runtime overhead (#3104)
+eaf0e85c ate-api-server's --egress-gateway-spiffe-id is repeatable, and ate-setup sets it from ATE_EGRESS_GATEWAY_EXTRA_SPIFFE_IDS (#3360)
+d86746d8 Reject snapshotConfig.storageLocation without its preview gate (#3357)
+ea4018ff atelet: clear node-local caches after a node reboot (#3376)
+9a4cb2ca atelet: keep the worker's Unavailable when a checkpoint fails (#3123)
+34cce1e9 ateworker: reuse a completed checkpoint only on the same boot (#3213)
+893a4581 Document running the ate-api-server cold resume tests from a workstation (#3394)
+e641e6ba Delete hack/install-ate.sh and hack/install-ate-kind.sh (#3354)
+2f1be4b2 benchmarking: remove default ATE_ENV_IMAGE and stop deploying ate-env template by default (#3366)
+475f49b0 ateapi: carry the golden actor's crash message into the template status (#2644)
+cae252a5 AGENTS.md: add the version skew rules (#3151)

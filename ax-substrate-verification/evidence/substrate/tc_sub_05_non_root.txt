@@ -1,8 +1,8 @@
 === TC-SUB-05: Non-Root Execution Verification ===
+✓ Found non-root config in: ate-api-server.yaml
 ✓ Found non-root config in: ate-idp-server.yaml
+✓ Found non-root config in: pod-certificate-controller.yaml
+✓ Found non-root config in: ate-controller.yaml
 ✓ Found non-root config in: atenet-router.yaml
 ✓ Found non-root config in: atenet-egress.yaml
-✓ Found non-root config in: ate-api-server.yaml
-✓ Found non-root config in: ate-controller.yaml
-✓ Found non-root config in: pod-certificate-controller.yaml
 ✓ Verified commit 59a58a5f: 59a58a5f manifests: Run control plane containers as non-root (#3028)

@@ -12,7 +12,7 @@ import sys
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path("/home/berrybytes/Office/Assignment")
+REPO_ROOT = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
 AX_DIR = REPO_ROOT / "ax"
 EVIDENCE_DIR = REPO_ROOT / "ax-substrate-verification" / "evidence" / "ax"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)

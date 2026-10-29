@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-10-28T07:29:22.033123+00:00",
-  "duration_seconds": 4.62415,
-  "ax_commit": "4b7bf6f84cac7eb12f21b87a76c8dc85155dce38",
-  "substrate_commit": "67c6a6b344533587122fdebc0f0444d56fc17c94",
+  "timestamp": "2026-10-29T05:04:50.743874+00:00",
+  "duration_seconds": 0.558775,
+  "ax_commit": "8440ae689d3314954b4f9f91d5b1460bdf5d6120",
+  "substrate_commit": "eaf0e85c7622d021d833c13e8f8911e2854f9794",
   "total": 15,
   "passed": 15,
   "failures": 0,
