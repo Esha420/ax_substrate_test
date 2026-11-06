@@ -2,8 +2,8 @@
   "1_ax_persistence_and_recovery": {
     "status": "PASS",
     "task_name": "golden-task",
-    "token": "PERSIST_TOKEN_1793255513",
-    "postgres_record": "golden-task|default|task-golden-task-1793250135",
+    "token": "PERSIST_TOKEN_1793336229",
+    "postgres_record": "golden-task|default|task-golden-task-1793336059",
     "continued_execution": true
   },
   "2_ax_to_substrate_execution": {
@@ -20,8 +20,8 @@
   },
   "3_worker_failure_and_recovery": {
     "status": "PASS",
-    "terminated_worker": "ax-workers-58ff96d9d6-84ldz",
-    "recovered_worker_ip": "10.244.0.54",
+    "terminated_worker": "ax-workers-6b5fcf7b58-9hfxw",
+    "recovered_worker_ip": "10.244.0.39",
     "recovery_verified": true
   },
   "4_runtime_isolation_and_authorization": {
@@ -34,21 +34,21 @@
   "5_suspend_snapshot_resume": {
     "status": "PASS",
     "task_name": "golden-task",
-    "state_token": "STATE_CHECKPOINT_1793255549",
+    "state_token": "STATE_CHECKPOINT_1793336269",
     "persisted_across_suspend": true
   },
   "6_observability_and_scope": {
     "status": "PASS",
     "jaeger_services": [
-      "atecontroller",
-      "atenet-router",
-      "atenet-router-envoy",
-      "atelet",
-      "objectstore-plugin-node",
-      "jaeger-all-in-one",
-      "objectstore-plugin-control",
       "ateapi",
-      "ateworker-gvisor"
+      "atecontroller",
+      "atelet",
+      "ateworker-gvisor",
+      "jaeger",
+      "atenet-router-envoy",
+      "atenet-router",
+      "objectstore-plugin-control",
+      "objectstore-plugin-node"
     ],
     "prometheus_targets_count": 6,
     "substrate_scope_online": true

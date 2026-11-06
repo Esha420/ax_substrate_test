@@ -12,7 +12,9 @@ import sys
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
+default_repo_root = Path(__file__).resolve().parents[2]
+env_root = os.environ.get("RESEARCH_ROOT")
+REPO_ROOT = Path(env_root) if env_root and Path(env_root).exists() else default_repo_root
 SUBSTRATE_DIR = REPO_ROOT / "substrate"
 EVIDENCE_DIR = REPO_ROOT / "ax-substrate-verification" / "evidence" / "substrate"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -34,8 +36,10 @@ class TestSubstratePlatform(unittest.TestCase):
         # 1. Inspect memlimit.go for memory.high configuration
         memlimit_go = (SUBSTRATE_DIR / "cmd" / "ateworker-gvisor" / "memlimit.go").read_text()
         self.assertIn("memory.high", memlimit_go)
-        self.assertIn("cgroup.kill", memlimit_go)
-        evidence.append("✓ cmd/ateworker-gvisor/memlimit.go uses memory.high and cgroup.kill")
+        # Verify cgroup.kill is utilized in the cgroup package
+        actor_cgroup_go = (SUBSTRATE_DIR / "internal" / "ateworker" / "cgroup" / "actor.go").read_text()
+        self.assertIn("cgroup.kill", actor_cgroup_go)
+        evidence.append("✓ cmd/ateworker-gvisor/memlimit.go uses memory.high and internal/ateworker/cgroup/actor.go uses cgroup.kill")
 
         # 2. Inspect memwatch.go for pressure monitoring
         memwatch_go = (SUBSTRATE_DIR / "internal" / "ateworker" / "cgroup" / "memwatch.go").read_text()
@@ -66,11 +70,14 @@ class TestSubstratePlatform(unittest.TestCase):
         evidence = []
         evidence.append("=== TC-SUB-02: CNCF DCO Governance Verification ===")
 
-        # 1. Inspect CONTRIBUTING.md
-        contrib_md = (SUBSTRATE_DIR / "CONTRIBUTING.md").read_text()
+        # 1. Inspect CONTRIBUTING.md (or docs/project/contributing.md if redirected)
+        contrib_md_file = SUBSTRATE_DIR / "CONTRIBUTING.md"
+        contrib_md = contrib_md_file.read_text()
+        if "docs/project/contributing.md" in contrib_md:
+            contrib_md = (SUBSTRATE_DIR / "docs" / "project" / "contributing.md").read_text()
         self.assertIn("Developer Certificate of Origin", contrib_md)
         self.assertIn("git commit -s", contrib_md)
-        evidence.append("✓ CONTRIBUTING.md specifies Developer Certificate of Origin (DCO) and git commit -s")
+        evidence.append("✓ CONTRIBUTING documentation specifies Developer Certificate of Origin (DCO) and git commit -s")
 
         # 2. Verify recent commits have Signed-off-by trailer
         cmd = ["git", "-C", str(SUBSTRATE_DIR), "log", "-n", "10", "--grep=Signed-off-by", "--oneline"]

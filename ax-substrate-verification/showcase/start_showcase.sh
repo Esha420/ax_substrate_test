@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # Showcase Launcher: AX & Agent Substrate Verification + Scope Visualization
-RESEARCH_ROOT="${RESEARCH_ROOT:-/home/esha/Office/research}"
-VERIF_DIR="${RESEARCH_ROOT}/ax-substrate-verification"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERIF_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+RESEARCH_ROOT="${RESEARCH_ROOT:-$(cd "${VERIF_DIR}/.." && pwd)}"
 SCOPE_DIR="${RESEARCH_ROOT}/substrate-scope"
 
 echo "======================================================================"

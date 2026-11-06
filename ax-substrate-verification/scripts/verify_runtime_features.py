@@ -18,14 +18,17 @@ import time
 import urllib.request
 from pathlib import Path
 
-BASE_DIR = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
-VERIF_DIR = BASE_DIR / "ax_substrate_test" / "ax-substrate-verification"
+default_base_dir = Path(__file__).resolve().parents[2]
+env_root = os.environ.get("RESEARCH_ROOT")
+BASE_DIR = Path(env_root) if env_root and Path(env_root).exists() else default_base_dir
+VERIF_DIR = BASE_DIR / "ax-substrate-verification"
 EVIDENCE_DIR = VERIF_DIR / "evidence" / "ax"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 KUBECONFIG = str(BASE_DIR / "ax" / ".tmp" / "kubeconfig-ax-e2e")
 AX_BIN = str(BASE_DIR / "ax" / ".tmp" / "bin" / "ax")
-KUBECTL_ATE = str(Path.home() / ".local" / "bin" / "kubectl-ate")
+import shutil
+KUBECTL_ATE = shutil.which("kubectl-ate") or str(Path.home() / "bin" / "kubectl-ate") or str(Path.home() / ".local" / "bin" / "kubectl-ate")
 SCOPE_URL = "http://127.0.0.1:8123"
 
 
@@ -133,7 +136,7 @@ metadata:
   name: e2e-feature-task
   atespace: default
 spec:
-  image: localhost:5001/ax-task-runner:e2e@sha256:765ac5457c08c58997dcad43db1f727a6d28516bb0dce764998723000036c187
+  image: localhost:5001/ax-task-runner:e2e@sha256:6627ebe4690940abd761daba55d0809595852c639816e968748885d24de913b0
   command:
     - sleep
     - "1800"
@@ -371,11 +374,16 @@ def verify_6_observability_and_scope():
     ensure_port(16686, "jaeger", "otel-system")
     ensure_port(9090, "prometheus", "otel-system")
 
-    # 1. Query Jaeger API
+    # 1. Query Jaeger API (support v3 and v1 endpoints)
     try:
-        j_req = urllib.request.urlopen("http://127.0.0.1:16686/api/services", timeout=3.0)
-        j_data = json.loads(j_req.read().decode())
-        jaeger_services = j_data.get("data", [])
+        try:
+            j_req = urllib.request.urlopen("http://127.0.0.1:16686/api/v3/services", timeout=3.0)
+            j_data = json.loads(j_req.read().decode())
+            jaeger_services = j_data.get("services", j_data.get("data", []))
+        except Exception:
+            j_req = urllib.request.urlopen("http://127.0.0.1:16686/api/services", timeout=3.0)
+            j_data = json.loads(j_req.read().decode())
+            jaeger_services = j_data.get("data", [])
     except Exception as e:
         jaeger_services = [f"Error connecting: {e}"]
 

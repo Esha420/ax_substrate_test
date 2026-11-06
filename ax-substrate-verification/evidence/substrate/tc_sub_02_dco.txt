@@ -1,13 +1,13 @@
 === TC-SUB-02: CNCF DCO Governance Verification ===
-✓ CONTRIBUTING.md specifies Developer Certificate of Origin (DCO) and git commit -s
+✓ CONTRIBUTING documentation specifies Developer Certificate of Origin (DCO) and git commit -s
 ✓ Commits with Signed-off-by found:
-eaf0e85c ate-api-server's --egress-gateway-spiffe-id is repeatable, and ate-setup sets it from ATE_EGRESS_GATEWAY_EXTRA_SPIFFE_IDS (#3360)
-d86746d8 Reject snapshotConfig.storageLocation without its preview gate (#3357)
-ea4018ff atelet: clear node-local caches after a node reboot (#3376)
-9a4cb2ca atelet: keep the worker's Unavailable when a checkpoint fails (#3123)
-34cce1e9 ateworker: reuse a completed checkpoint only on the same boot (#3213)
-893a4581 Document running the ate-api-server cold resume tests from a workstation (#3394)
-e641e6ba Delete hack/install-ate.sh and hack/install-ate-kind.sh (#3354)
-2f1be4b2 benchmarking: remove default ATE_ENV_IMAGE and stop deploying ate-env template by default (#3366)
-475f49b0 ateapi: carry the golden actor's crash message into the template status (#2644)
-cae252a5 AGENTS.md: add the version skew rules (#3151)
+46b6ea90 docs: document sandbox class differences and fix stale passages (#3468)
+12617662 docs: normalize actor resume latency and activation rate (#3474)
+61ea6c61 site: publish per-page Markdown and fix llms.txt and llms-full.txt (#3435)
+7cd9fe79 README: add an animated SVG (#3423)
+910671c7 e2e: add asynchronous suspend upload and detach checks (#3264)
+62efb707 atenet-router no longer stalls 15s on every start (#3346)
+5d226a50 Run containers as the image's USER and WORKDIR, with layer file owners kept (#2392)
+3aa3eeca ate-setup: retry each ko release image with backoff (#3446)
+0d662b85 benchmarking: stop uploading the duplicate {name}.jsonl (#3309)
+6949841e docs: average ate.workerpool.workers across replicas before summing (#3193)

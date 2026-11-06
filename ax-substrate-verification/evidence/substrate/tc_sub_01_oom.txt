@@ -1,5 +1,5 @@
 === TC-SUB-01: Worker-Level OOM Isolation ===
-✓ cmd/ateworker-gvisor/memlimit.go uses memory.high and cgroup.kill
+✓ cmd/ateworker-gvisor/memlimit.go uses memory.high and internal/ateworker/cgroup/actor.go uses cgroup.kill
 ✓ internal/ateworker/cgroup/memwatch.go monitors memory.pressure
 Command: go test -v ./internal/ateworker/cgroup/... -run TestMemoryWatch|TestCPUMax|TestOpenActorLeaf
 Exit Code: 0
@@ -17,7 +17,7 @@ Exit Code: 0
 === RUN   TestMemoryWatch/stalled_without_hitting_its_limit
 === RUN   TestMemoryWatch/far_over_the_limit_is_killed_at_once
 === RUN   TestMemoryWatch/stalls_age_out_of_the_window
---- PASS: TestMemoryWatch (0.00s)
+--- PASS: TestMemoryWatch (0.01s)
     --- PASS: TestMemoryWatch/stuck_at_the_limit (0.00s)
     --- PASS: TestMemoryWatch/stuck_but_dipping_under_the_limit (0.00s)
     --- PASS: TestMemoryWatch/at_the_limit_but_making_progress (0.00s)

@@ -12,7 +12,9 @@ import sys
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(os.environ.get("RESEARCH_ROOT", "/home/esha/Office/research"))
+default_repo_root = Path(__file__).resolve().parents[2]
+env_root = os.environ.get("RESEARCH_ROOT")
+REPO_ROOT = Path(env_root) if env_root and Path(env_root).exists() else default_repo_root
 SCRIPT_PATH = REPO_ROOT / "test_snapshot_lineage.sh"
 EVIDENCE_DIR = REPO_ROOT / "ax-substrate-verification" / "evidence" / "substrate"
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
