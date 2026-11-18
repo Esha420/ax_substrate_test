@@ -243,12 +243,37 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 })
                 return
 
-            # 2. RFC 8693 Token Exchange (Agent-to-Agent Delegation / MCP Grant)
+            # 2. RFC 8693 Token Exchange (Agent-to-Agent Delegation / Multi-Hop)
             elif grant_type == "urn:ietf:params:oauth:grant-type:token-exchange":
                 subject_token = body.get("subject_token")
-                actor_id = body.get("actor_token", "agent-a")
+
+                # Extract actor_id from HTTP Basic Auth, body.actor_token, or body.client_id
+                auth_header = self.headers.get("Authorization", "")
+                if auth_header.startswith("Basic "):
+                    import base64
+                    try:
+                        cred = base64.b64decode(auth_header.split(" ", 1)[1]).decode("utf-8")
+                        actor_id = cred.split(":", 1)[0]
+                    except Exception:
+                        actor_id = body.get("actor_token", "agent-a")
+                elif "actor_token" in body:
+                    actor_id = body["actor_token"]
+                elif "client_id" in body:
+                    actor_id = body["client_id"]
+                else:
+                    actor_id = "agent-a"
+
                 audience = body.get("audience") or body.get("resource") or "agent-b"
-                requested_scope = body.get("scope", "db:read")
+                
+                # Scope attenuation based on target audience policy
+                requested_scope = body.get("scope")
+                if not requested_scope:
+                    if "9003" in audience or "agent-c" in audience:
+                        requested_scope = "audit:write"
+                    elif "9002" in audience or "agent-b" in audience:
+                        requested_scope = "incident:investigate db:read"
+                    else:
+                        requested_scope = "db:read"
 
                 if not subject_token:
                     self._send_json(400, {
@@ -288,7 +313,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     })
                     return
 
-                # Policy Evaluation
+                # Policy Evaluation: Prohibited Scopes
                 requested_scopes_list = requested_scope.split() if requested_scope else []
                 for sc in requested_scopes_list:
                     if sc in PROHIBITED_SCOPES:
@@ -298,18 +323,16 @@ class KeycardHandler(BaseHTTPRequestHandler):
                         })
                         return
 
-                # Construct Nested 'act' Claim (RFC 8693)
-                if "act" not in parent_claims:
+                # Construct Nested 'act' Claim (RFC 8693 Chained Delegation)
+                # When B delegates to C, B is the actor, and previous actor A is nested inside.
+                if "act" in parent_claims and isinstance(parent_claims["act"], dict):
                     nested_act = {
-                        "sub": audience,
-                        "act": {
-                            "sub": actor_id
-                        }
+                        "sub": actor_id,
+                        "act": parent_claims["act"]
                     }
                 else:
                     nested_act = {
-                        "sub": audience,
-                        "act": parent_claims["act"]
+                        "sub": actor_id
                     }
 
                 now = int(time.time())
@@ -317,6 +340,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     "iss": base_url,
                     "sub": parent_claims.get("sub", "alice"),
                     "aud": audience,
+                    "client_id": actor_id or parent_claims.get("client_id", "agent-a"),
                     "resource": audience,
                     "scope": requested_scope,
                     "sid": sid,

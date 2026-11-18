@@ -1,41 +1,89 @@
-# Keycard Runtime Security & FastMCP Quickstart Showcase
+# Keycard Multi-Agent (A2A) Security & Multi-Hop Delegation Showcase
 
-This directory provides a complete, working implementation of:
-1. **The 5 Core Runtime Security Features** via raw `curl` commands.
-2. **The Official Keycard FastMCP Quickstart** ([docs.keycard.ai/guides/quickstart](https://docs.keycard.ai/guides/quickstart/)) using the real `keycardai-fastmcp` Python package, runnable immediately without waiting for `console.keycard.ai` console approval.
+This workspace provides an implementation of autonomous multi-agent security using the official Keycard A2A SDK (`keycardai-a2a`, `keycardai-starlette`) and official Google Agent-to-Agent SDK (`a2a-sdk`), reusing existing open-source agents from [`a2aproject/a2a-samples`](https://github.com/a2aproject/a2a-samples).
 
 ---
 
-### Key Components
+### Core Architecture: 2-Hop Multi-Hop Delegation
 
-* [`keycard_server.py`](file:///home/berrybytes/Office/Assignment/keycard/keycard_server.py): Standards-compliant Keycard STS with RFC 8414 OAuth 2.0 discovery (`/.well-known/oauth-authorization-server`), JWKS (`/oauth/jwks`), RFC 8693 token exchange, and revocation.
-* [`mcp_server.py`](file:///home/berrybytes/Office/Assignment/keycard/mcp_server.py): The official Quickstart FastMCP server using `keycardai.fastmcp.AuthProvider` and `@auth_provider.grant("https://api.github.com")`.
-* [`test_quickstart.py`](file:///home/berrybytes/Office/Assignment/keycard/test_quickstart.py): Test script that executes the FastMCP `list_my_repos` tool with automated token exchange.
-* [`demo.sh`](file:///home/berrybytes/Office/Assignment/keycard/demo.sh): Automated runner for the 5 core `curl` commands.
+```text
+Human User (Alice)
+       │
+       ▼ (Initial Session: support:read tasks:delegate incident:investigate audit:write)
+Calling Orchestrator (Agent A)
+       │
+       ├─ 1. Discovers Agent B via /.well-known/agent-card.json
+       ├─ 2. RFC 8693 Token Exchange against Keycard STS (Hop 1)
+       │     └─ Token B: sub="alice", aud="Agent B", scope="incident:investigate db:read", act={"sub": "agent-a"}
+       ▼
+Incident Investigator (Agent B) [Reusing HelloWorldAgentExecutor]
+       │
+       ├─ 3. Verifies Token B via KeycardAuthBackend + TokenVerifier
+       ├─ 4. Injects KeycardUser into ServerCallContext via KeycardServerCallContextBuilder
+       ├─ 5. Investigates account incident
+       ├─ 6. RFC 8693 Token Exchange against Keycard STS (Hop 2)
+       │     └─ Token C: sub="alice", aud="Agent C", scope="audit:write", act={"sub": "agent-b", "act": {"sub": "agent-a"}}
+       ▼
+Audit Vault Signer (Agent C) [Reusing SignedAgentExecutor]
+       │
+       ├─ 7. Verifies Token C via KeycardAuthBackend + TokenVerifier
+       ├─ 8. Cryptographically seals evidence under root user 'alice' with scope 'audit:write'
+       └─ 9. Returns verified seal back through the chain: Agent C ➔ Agent B ➔ Agent A ➔ Alice
+```
 
 ---
 
-### Quickstart
+### The 5 Presentation Moments
 
-#### 1. Start the Local Keycard STS Server
+The demonstration script ([showcase_a2a_keycard.py](file:///home/berrybytes/Office/Assignment/keycard/showcase_a2a_keycard.py)) is structured into the 5 core presentation moments:
+
+1. **Moment 1 — The Problem (Ordinary A2A Accepts Anonymous Requests):**
+   - Shows an unauthenticated HTTP client executing actions on an unprotected open-source agent.
+   - Highlights the baseline security vulnerability: zero caller verification, lost human origin, and absence of authorization boundaries.
+2. **Moment 2 — The Integration (Service Discovery & Ephemeral Token Exchange):**
+   - Demonstrates official A2A agent card discovery (`/.well-known/agent-card.json`).
+   - `DelegationClient` executes RFC 8693 token exchange against Keycard STS to mint task-scoped ephemeral RS256 credentials.
+3. **Moment 3 — The Identity (Multi-Hop Cryptographic Lineage & Progressive Attenuation):**
+   - Cryptographically preserves human user `alice` across **two autonomous hops** (`alice ➔ agent-a ➔ agent-b ➔ agent-c`).
+   - Progressively attenuates permissions:
+     - Alice: `support:read tasks:delegate incident:investigate audit:write`
+     - Agent B: `incident:investigate db:read` (Attenuated)
+     - Agent C: `audit:write` (Narrowest scope)
+   - Decodes RFC 8693 nested `act` claims: `{"sub": "agent-b", "act": {"sub": "agent-a"}}`.
+   - Masks bearer tokens in logs (`eyJhbGci...[MASKED]...`) while validating RS256 signatures via dynamic JWKS (`/oauth/jwks`).
+4. **Moment 4 — The Security (Allowed Operation vs. 3 Blocked Attacks):**
+   - **Allowed Delegated Operation:** Authorized multi-hop workflow completes cleanly.
+   - **Attack 4A (No Auth):** Rogue direct JSON-RPC call $\rightarrow$ HTTP 401 Unauthorized.
+   - **Attack 4B (Audience Replay):** Alice's session token replayed to Agent B $\rightarrow$ HTTP 401 Unauthorized (Audience mismatch).
+   - **Attack 4C (Scope Escalation):** Rogue agent requests prohibited `db:delete` scope $\rightarrow$ HTTP 403 Forbidden (Blocked at STS boundary).
+5. **Moment 5 — The Evidence (Execution-Level Telemetry & Containment Proof):**
+   - Uses `MultiHopAuditTracker` to track execution counters inside `IncidentInvestigatorExecutor` and `AuditVaultSignerExecutor`.
+   - **Empirical Proof:** In all 3 attacks, executor execution counters **remain completely unchanged**. Payloads are intercepted *before* agent code execution.
+   - **Containment Rate:** 100.0% of unauthorized attempts stopped.
+
+---
+
+### Key Takeaway
+
+> *"Keycard doesn't stop agents from communicating. It ensures that when agents communicate and delegate tasks, their identities, authority and accountability travel with them."*
+
+---
+
+### Running the Showcase
+
+#### 1. Automated Run (Instant Demo)
 ```bash
 cd /home/berrybytes/Office/Assignment/keycard
-.venv/bin/python keycard_server.py 8088
+.venv/bin/python showcase_a2a_keycard.py
 ```
-*(Runs on `http://127.0.0.1:8088`)*
 
-#### 2. Test the Official Keycard FastMCP Quickstart Tool
+#### 2. Live Interactive Presentation Mode (Step-by-Step with `[ENTER]`)
 ```bash
-.venv/bin/python test_quickstart.py
+cd /home/berrybytes/Office/Assignment/keycard
+.venv/bin/python showcase_a2a_keycard.py --interactive
 ```
-**What happens:**
-1. Issues an ephemeral token for user `alice`.
-2. The `@auth_provider.grant("https://api.github.com")` decorator from `keycardai-fastmcp` intercepts the tool call.
-3. Performs an automated RFC 8693 Token Exchange against Keycard STS for `https://api.github.com`.
-4. Executes `list_my_repos` using the injected, ephemeral token without static secrets.
 
-#### 3. Run the 5 Core `curl` Commands Showcase
+#### 3. Custom Ports or STS URL
 ```bash
-./demo.sh
+.venv/bin/python showcase_a2a_keycard.py --sts-url http://127.0.0.1:8088 --agent-b-port 9002 --agent-c-port 9003
 ```
-Shows credential minting, A2A delegation, nested `act` claims inspection, 403 policy blocking, and instant revocation.
