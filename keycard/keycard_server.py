@@ -7,16 +7,18 @@ Features:
   2. JSON Web Key Set (JWKS) endpoint (/oauth/jwks) for RS256 token verification
   3. Ephemeral task-scoped credential issuance & OAuth 2.0 Token Exchange (RFC 8693)
   4. Scope attenuation & prohibited scope blocking (e.g. db:delete)
-  5. Cryptographic preservation of user lineage via nested RFC 8693 'act' claims
-  6. Real-time session and token revocation (/oauth/revoke)
-  7. Protected tool / resource access with audit logging
-Compatible with both raw curl commands and official Keycard SDKs (keycardai-fastmcp, keycardai-mcp).
+  5. Strict delegation bounds: agents cannot delegate permissions they never received (HTTP 403)
+  6. Registered delegator policy: unauthorized agents cannot delegate (HTTP 403)
+  7. Cryptographic preservation of user lineage via nested RFC 8693 'act' claims
+  8. Real-time session and token revocation (/oauth/revoke)
+  9. Central delegation audit trail (/audit)
 """
 
 import json
 import time
 import uuid
 import urllib.parse
+from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -50,13 +52,27 @@ HS256_SECRET = "keycard-demo-secret-key-32bytes-min"
 
 REVOKED_SESSIONS = set()
 
-# Defined policies in Keycard zone
+# Defined policies in Keycard zone: allowed delegators -> permitted downstream targets
 ALLOWED_DELEGATIONS = {
-    # delegator -> list of allowed downstream target agents/audiences
-    "agent-a": ["agent-b", "https://api.github.com"]
+    "agent-a": ["agent-b", "http://127.0.0.1:9002", "https://api.github.com"],
+    "agent-b": ["agent-c", "http://127.0.0.1:9003"],
 }
 
 PROHIBITED_SCOPES = {"db:delete", "admin:access", "system:root"}
+
+# Global in-memory audit trail
+AUDIT_TRAIL = []
+
+
+def record_audit_event(event_type: str, details: dict):
+    entry = {
+        "event_id": f"evt_{uuid.uuid4().hex[:8]}",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "type": event_type,
+        **details
+    }
+    AUDIT_TRAIL.append(entry)
+    return entry
 
 
 def extract_delegation_chain(claims):
@@ -97,6 +113,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 "token_endpoint": f"{base_url}/oauth/token",
                 "jwks_uri": f"{base_url}/oauth/jwks",
                 "revocation_endpoint": f"{base_url}/oauth/revoke",
+                "audit_endpoint": f"{base_url}/audit",
                 "response_types_supported": ["code", "token"],
                 "grant_types_supported": [
                     "client_credentials",
@@ -117,85 +134,16 @@ class KeycardHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"keys": [PUBLIC_JWK]})
             return
 
-        # 3b. Revocation Status Endpoint for Downstream Agents
+        # 4. Revocation Status Endpoint for Downstream Agents
         if self.path.startswith("/oauth/revoked"):
             self._send_json(200, {"revoked_sessions": list(REVOKED_SESSIONS)})
             return
 
-        # 4. Protected Customer Data Resource
-        if self.path == "/api/customer-data":
-            auth_header = self.headers.get("Authorization", "")
-            if not auth_header.startswith("Bearer "):
-                self._send_json(401, {
-                    "error": "unauthorized",
-                    "error_description": "Missing or malformed Authorization header"
-                })
-                return
-
-            token = auth_header.split(" ", 1)[1].strip()
-            claims = None
-            # Try RS256 first, then HS256
-            try:
-                claims = jwt.decode(
-                    token,
-                    RSA_PUBLIC_KEY,
-                    algorithms=["RS256"],
-                    options={"verify_exp": True, "verify_aud": False}
-                )
-            except Exception:
-                try:
-                    claims = jwt.decode(
-                        token,
-                        HS256_SECRET,
-                        algorithms=["HS256"],
-                        options={"verify_exp": True, "verify_aud": False}
-                    )
-                except jwt.ExpiredSignatureError:
-                    self._send_json(401, {
-                        "error": "token_expired",
-                        "error_description": "The presented ephemeral token has expired"
-                    })
-                    return
-                except Exception as e:
-                    self._send_json(401, {
-                        "error": "invalid_token",
-                        "error_description": f"Failed to validate token: {str(e)}"
-                    })
-                    return
-
-            sid = claims.get("sid")
-            if sid in REVOKED_SESSIONS:
-                self._send_json(401, {
-                    "error": "invalid_token",
-                    "error_description": f"Session '{sid}' has been revoked by security policy."
-                })
-                return
-
-            scopes = claims.get("scope", "").split()
-            if "db:read" not in scopes:
-                self._send_json(403, {
-                    "error": "insufficient_scope",
-                    "error_description": "The presented token lacks the required 'db:read' scope."
-                })
-                return
-
-            delegation_path = extract_delegation_chain(claims)
+        # 5. Delegation Audit Trail Endpoint
+        if self.path == "/audit":
             self._send_json(200, {
-                "status": "success",
-                "message": "Resource accessed successfully under Keycard delegation policy.",
-                "data": {
-                    "customer_id": "CUST-9842",
-                    "company_name": "Global Tech Industries",
-                    "tier": "Enterprise",
-                    "records_accessed": 142
-                },
-                "audit_trail": {
-                    "principal_user": claims.get("sub"),
-                    "executing_agent": claims.get("aud"),
-                    "delegation_lineage": delegation_path,
-                    "session_id": sid,
-                    "token_scopes": scopes
-                }
+                "total_events": len(AUDIT_TRAIL),
+                "audit_trail": AUDIT_TRAIL
             })
             return
 
@@ -225,6 +173,20 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 parsed = urllib.parse.parse_qs(body_bytes.decode("utf-8"))
                 body = {k: v[0] for k, v in parsed.items()}
 
+        # Audit Trail Reset Endpoint
+        if self.path == "/audit/reset":
+            AUDIT_TRAIL.clear()
+            self._send_json(200, {"status": "reset", "message": "Audit trail cleared."})
+            return
+
+        # Audit Event Ingestion Endpoint (from Agent B and Agent C)
+        if self.path == "/audit/event":
+            event_type = body.get("type", "AGENT_EVENT")
+            details = body.get("details", {})
+            entry = record_audit_event(event_type, details)
+            self._send_json(200, {"status": "ok", "event_id": entry["event_id"]})
+            return
+
         if self.path == "/oauth/token":
             grant_type = body.get("grant_type")
 
@@ -232,7 +194,8 @@ class KeycardHandler(BaseHTTPRequestHandler):
             if grant_type == "client_credentials":
                 client_id = body.get("client_id", "agent-a")
                 user_id = body.get("user_id", "alice")
-                scope = body.get("scope", "support:read tasks:delegate")
+                scope = body.get("scope", "support:read tasks:delegate incident:investigate audit:write")
+                expires_in = int(body.get("expires_in", 900))  # Supports negative values for testing expired tokens
                 sid = f"sess_{uuid.uuid4().hex[:12]}"
 
                 now = int(time.time())
@@ -244,20 +207,29 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     "scope": scope,
                     "sid": sid,
                     "iat": now,
-                    "exp": now + 900  # 15 minutes TTL
+                    "exp": now + expires_in
                 }
-                # Sign with RS256 for OIDC / FastMCP compliance
                 token = jwt.encode(
                     payload,
                     RSA_PRIVATE_KEY,
                     algorithm="RS256",
                     headers={"kid": KEY_ID}
                 )
-                print(f"\033[1;36m[Keycard STS]\033[0m MINT: Issued token for user='{user_id}', client='{client_id}', scope='{scope}' (sid: {sid})", flush=True)
+
+                record_audit_event("USER_SESSION_MINTED", {
+                    "user_id": user_id,
+                    "client_id": client_id,
+                    "scope": scope,
+                    "session_id": sid,
+                    "expires_in": expires_in,
+                    "decision": "AUTHORIZED"
+                })
+
+                print(f"\033[1;36m[Keycard STS]\033[0m MINT: Issued token for user='{user_id}', client='{client_id}', scope='{scope}' (sid: {sid}, ttl: {expires_in}s)", flush=True)
                 self._send_json(200, {
                     "access_token": token,
                     "token_type": "Bearer",
-                    "expires_in": 900,
+                    "expires_in": expires_in,
                     "scope": scope,
                     "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
                 })
@@ -284,16 +256,6 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     actor_id = "agent-a"
 
                 audience = body.get("audience") or body.get("resource") or "agent-b"
-                
-                # Scope attenuation based on target audience policy
-                requested_scope = body.get("scope")
-                if not requested_scope:
-                    if "9003" in audience or "agent-c" in audience:
-                        requested_scope = "audit:write"
-                    elif "9002" in audience or "agent-b" in audience:
-                        requested_scope = "incident:investigate db:read"
-                    else:
-                        requested_scope = "db:read"
 
                 if not subject_token:
                     self._send_json(400, {
@@ -310,43 +272,111 @@ class KeycardHandler(BaseHTTPRequestHandler):
                         algorithms=["RS256"],
                         options={"verify_exp": True, "verify_aud": False}
                     )
-                except Exception:
-                    try:
-                        parent_claims = jwt.decode(
-                            subject_token,
-                            HS256_SECRET,
-                            algorithms=["HS256"],
-                            options={"verify_exp": True, "verify_aud": False}
-                        )
-                    except jwt.ExpiredSignatureError:
-                        self._send_json(401, {"error": "token_expired", "error_description": "Subject token has expired"})
-                        return
-                    except Exception as e:
-                        self._send_json(401, {"error": "invalid_token", "error_description": f"Invalid subject token: {str(e)}"})
-                        return
+                except jwt.ExpiredSignatureError:
+                    record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                        "actor_id": actor_id,
+                        "audience": audience,
+                        "reason": "EXPIRED_SUBJECT_TOKEN",
+                        "decision": "DENIED_401"
+                    })
+                    self._send_json(401, {"error": "token_expired", "error_description": "Subject token has expired"})
+                    return
+                except Exception as e:
+                    record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                        "actor_id": actor_id,
+                        "audience": audience,
+                        "reason": f"INVALID_TOKEN: {str(e)}",
+                        "decision": "DENIED_401"
+                    })
+                    self._send_json(401, {"error": "invalid_token", "error_description": f"Invalid subject token: {str(e)}"})
+                    return
 
                 sid = parent_claims.get("sid", f"sess_{uuid.uuid4().hex[:12]}")
                 if sid in REVOKED_SESSIONS:
+                    record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                        "actor_id": actor_id,
+                        "audience": audience,
+                        "session_id": sid,
+                        "reason": "SESSION_REVOKED",
+                        "decision": "DENIED_401"
+                    })
                     self._send_json(401, {
                         "error": "invalid_token",
                         "error_description": f"Session '{sid}' is revoked."
                     })
                     return
 
-                # Policy Evaluation: Prohibited Scopes
+                # Policy Enforcement 1: Unauthorized Agent attempting delegation
+                if actor_id not in ALLOWED_DELEGATIONS:
+                    print(f"\033[1;31m[Keycard STS]\033[0m POLICY REJECTION: Unauthorized agent '{actor_id}' attempted delegation (HTTP 403)", flush=True)
+                    record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                        "actor_id": actor_id,
+                        "audience": audience,
+                        "session_id": sid,
+                        "reason": "UNAUTHORIZED_DELEGATOR",
+                        "decision": "DENIED_403"
+                    })
+                    self._send_json(403, {
+                        "error": "unauthorized_client",
+                        "error_description": f"Policy rejection: Agent '{actor_id}' is not an authorized delegator in this security zone."
+                    })
+                    return
+
+                # Scope attenuation defaults based on audience
+                requested_scope = body.get("scope")
+                if not requested_scope:
+                    if "9003" in audience or "agent-c" in audience:
+                        requested_scope = "audit:write"
+                    elif "9002" in audience or "agent-b" in audience:
+                        requested_scope = "incident:investigate db:read"
+                    else:
+                        requested_scope = "db:read"
+
                 requested_scopes_list = requested_scope.split() if requested_scope else []
+                parent_scopes_list = parent_claims.get("scope", "").split()
+
+                # Policy Enforcement 2: Prohibited Scopes (e.g. db:delete, admin:access)
                 for sc in requested_scopes_list:
                     if sc in PROHIBITED_SCOPES:
                         print(f"\033[1;31m[Keycard STS]\033[0m POLICY REJECTION: Prohibited scope '{sc}' requested by actor='{actor_id}' (HTTP 403)", flush=True)
+                        record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                            "actor_id": actor_id,
+                            "audience": audience,
+                            "session_id": sid,
+                            "prohibited_scope": sc,
+                            "reason": "PROHIBITED_SCOPE",
+                            "decision": "DENIED_403"
+                        })
                         self._send_json(403, {
                             "error": "policy_denied",
                             "error_description": f"Policy rejection: Scope escalation detected. Scope '{sc}' is prohibited by security policy."
                         })
                         return
 
-                # Construct Nested 'act' Claim (RFC 8693 Chained Delegation)
-                # When B delegates to C, B is the actor, and previous actor A is nested inside.
+                # Policy Enforcement 3: Cannot delegate permissions never received
+                unheld_scopes = [s for s in requested_scopes_list if s not in parent_scopes_list]
+                if unheld_scopes:
+                    print(f"\033[1;31m[Keycard STS]\033[0m POLICY REJECTION: Scope escalation: actor '{actor_id}' requested {unheld_scopes} but parent token only holds {parent_scopes_list} (HTTP 403)", flush=True)
+                    record_audit_event("TOKEN_EXCHANGE_REJECTED", {
+                        "actor_id": actor_id,
+                        "audience": audience,
+                        "session_id": sid,
+                        "requested_scopes": requested_scopes_list,
+                        "held_scopes": parent_scopes_list,
+                        "unheld_scopes": unheld_scopes,
+                        "reason": "UNHELD_SCOPES_DELEGATION",
+                        "decision": "DENIED_403"
+                    })
+                    self._send_json(403, {
+                        "error": "invalid_scope",
+                        "error_description": f"Policy rejection: Unauthorized delegation. Requested scope(s) {unheld_scopes} exceed permissions held in subject token ({parent_scopes_list}). Agents cannot delegate permissions they never received."
+                    })
+                    return
+
+                # Construct Nested 'act' Claim (RFC 8693 Chained Lineage)
+                previous_actor = None
                 if "act" in parent_claims and isinstance(parent_claims["act"], dict):
+                    previous_actor = parent_claims["act"].get("sub")
                     nested_act = {
                         "sub": actor_id,
                         "act": parent_claims["act"]
@@ -357,17 +387,18 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     }
 
                 now = int(time.time())
+                expires_in = int(body.get("expires_in", 900))
                 new_payload = {
                     "iss": base_url,
                     "sub": parent_claims.get("sub", "alice"),
                     "aud": audience,
-                    "client_id": actor_id or parent_claims.get("client_id", "agent-a"),
+                    "client_id": actor_id,
                     "resource": audience,
                     "scope": requested_scope,
                     "sid": sid,
                     "act": nested_act,
                     "iat": now,
-                    "exp": now + 900
+                    "exp": now + expires_in
                 }
                 new_token = jwt.encode(
                     new_payload,
@@ -376,15 +407,36 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     headers={"kid": KEY_ID}
                 )
 
-                chain_str = " -> ".join([parent_claims.get("sub", "user")] + extract_delegation_chain(new_payload) + [audience])
+                lineage_list = [parent_claims.get("sub", "user")] + extract_delegation_chain(new_payload) + [audience]
+                chain_str = " -> ".join(lineage_list)
+
+                record_audit_event("TOKEN_EXCHANGE_SUCCESS", {
+                    "subject": parent_claims.get("sub", "alice"),
+                    "actor": actor_id,
+                    "previous_actor": previous_actor,
+                    "target_audience": audience,
+                    "granted_scopes": requested_scopes_list,
+                    "parent_scopes": parent_scopes_list,
+                    "lineage": lineage_list,
+                    "session_id": sid,
+                    "decision": "AUTHORIZED"
+                })
+
                 print(f"\033[1;32m[Keycard STS]\033[0m RFC 8693 TOKEN-EXCHANGE: actor='{actor_id}' -> target='{audience}' | Lineage: [{chain_str}] | scope='{requested_scope}'", flush=True)
 
                 self._send_json(200, {
                     "access_token": new_token,
                     "token_type": "Bearer",
-                    "expires_in": 900,
+                    "expires_in": expires_in,
                     "scope": requested_scope,
-                    "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
+                    "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+                    "delegation_info": {
+                        "subject": parent_claims.get("sub", "alice"),
+                        "actor": actor_id,
+                        "previous_actor": previous_actor,
+                        "audience": audience,
+                        "granted_scopes": requested_scopes_list
+                    }
                 })
                 return
 
@@ -414,6 +466,13 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 return
 
             REVOKED_SESSIONS.add(sid)
+
+            record_audit_event("SESSION_REVOKED", {
+                "session_id": sid,
+                "status": "REVOKED",
+                "message": "Session revoked centrally at Keycard STS"
+            })
+
             print(f"\033[1;33m[Keycard STS]\033[0m REVOCATION: Session '{sid}' revoked across all downstream agents.", flush=True)
             self._send_json(200, {
                 "status": "revoked",
