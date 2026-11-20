@@ -18,12 +18,26 @@ import time
 import uuid
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 from joserfc.jwk import RSAKey
 import jwt
 
-# Generate RSA key pair for standard RS256 JWKS validation
-RSA_PRIVATE_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+# Persistent RSA key pair for standard RS256 JWKS validation across restarts
+KEY_FILE = Path(__file__).resolve().parent / "keycard_rsa_key.pem"
+if KEY_FILE.exists():
+    with open(KEY_FILE, "rb") as f:
+        RSA_PRIVATE_KEY = serialization.load_pem_private_key(f.read(), password=None)
+else:
+    RSA_PRIVATE_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    with open(KEY_FILE, "wb") as f:
+        f.write(RSA_PRIVATE_KEY.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        ))
+
 RSA_PUBLIC_KEY = RSA_PRIVATE_KEY.public_key()
 PUBLIC_JWK = RSAKey.import_key(RSA_PUBLIC_KEY).as_dict()
 KEY_ID = "keycard-demo-rsa-key-1"
@@ -101,6 +115,11 @@ class KeycardHandler(BaseHTTPRequestHandler):
         # 3. JWKS Endpoint for RemoteAuthProvider / JWTVerifier
         if self.path == "/oauth/jwks":
             self._send_json(200, {"keys": [PUBLIC_JWK]})
+            return
+
+        # 3b. Revocation Status Endpoint for Downstream Agents
+        if self.path.startswith("/oauth/revoked"):
+            self._send_json(200, {"revoked_sessions": list(REVOKED_SESSIONS)})
             return
 
         # 4. Protected Customer Data Resource
@@ -234,6 +253,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     algorithm="RS256",
                     headers={"kid": KEY_ID}
                 )
+                print(f"\033[1;36m[Keycard STS]\033[0m MINT: Issued token for user='{user_id}', client='{client_id}', scope='{scope}' (sid: {sid})", flush=True)
                 self._send_json(200, {
                     "access_token": token,
                     "token_type": "Bearer",
@@ -317,6 +337,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 requested_scopes_list = requested_scope.split() if requested_scope else []
                 for sc in requested_scopes_list:
                     if sc in PROHIBITED_SCOPES:
+                        print(f"\033[1;31m[Keycard STS]\033[0m POLICY REJECTION: Prohibited scope '{sc}' requested by actor='{actor_id}' (HTTP 403)", flush=True)
                         self._send_json(403, {
                             "error": "policy_denied",
                             "error_description": f"Policy rejection: Scope escalation detected. Scope '{sc}' is prohibited by security policy."
@@ -355,6 +376,9 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     headers={"kid": KEY_ID}
                 )
 
+                chain_str = " -> ".join([parent_claims.get("sub", "user")] + extract_delegation_chain(new_payload) + [audience])
+                print(f"\033[1;32m[Keycard STS]\033[0m RFC 8693 TOKEN-EXCHANGE: actor='{actor_id}' -> target='{audience}' | Lineage: [{chain_str}] | scope='{requested_scope}'", flush=True)
+
                 self._send_json(200, {
                     "access_token": new_token,
                     "token_type": "Bearer",
@@ -390,6 +414,7 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 return
 
             REVOKED_SESSIONS.add(sid)
+            print(f"\033[1;33m[Keycard STS]\033[0m REVOCATION: Session '{sid}' revoked across all downstream agents.", flush=True)
             self._send_json(200, {
                 "status": "revoked",
                 "session_id": sid,

@@ -51,3 +51,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# External sample repositories
+keycard/a2a-samples/
+keycard/*.pem
+keycard/.server_pids
+keycard/.*.log
