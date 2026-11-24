@@ -79,11 +79,12 @@ def inspect_token(token_str: str):
         hop_label = f"Alice ➔ {client_id} (Initial User Credential)"
         aud_label = str(aud)
 
+    sub_profile = payload.get("sub_profile", "user")
     print(f"\n{BOLD}{CYAN}======================================================================{RESET}")
     print(f"{BOLD}{GREEN}  RUNTIME AUTHORIZATION VISIBILITY: {YELLOW}{hop_label}{RESET}")
     print(f"{BOLD}{CYAN}======================================================================{RESET}")
     print(f"  {BOLD}Status:{RESET}           {BOLD}{GREEN}Authorized (Policy Verified){RESET}")
-    print(f"  • {BOLD}Subject:{RESET}          {GREEN}{sub.capitalize() if sub.isalpha() else sub}{RESET} (Originating Human User)")
+    print(f"  • {BOLD}Subject:{RESET}          {GREEN}{sub.capitalize() if sub.isalpha() else sub}{RESET} (Originating Human User | sub_profile='{sub_profile}')")
     print(f"  • {BOLD}Actor:{RESET}            {YELLOW}{immediate_actor}{RESET}")
     if previous_actor:
         print(f"  • {BOLD}Previous actor:{RESET}   {CYAN}{previous_actor}{RESET}")

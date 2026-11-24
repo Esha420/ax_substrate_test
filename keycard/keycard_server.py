@@ -187,21 +187,74 @@ class KeycardHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"status": "ok", "event_id": entry["event_id"]})
             return
 
+        # Keycard IdP: Human User Authentication Endpoint (OIDC / User Login)
+        if self.path == "/idp/login":
+            username = body.get("username", "alice")
+            client_id = body.get("client_id", "agent-a")
+            scope = body.get("scope", "support:read tasks:delegate incident:investigate db:read audit:write")
+            expires_in = int(body.get("expires_in", 900))
+            sid = f"sess_{uuid.uuid4().hex[:12]}"
+
+            now = int(time.time())
+            payload = {
+                "iss": base_url,
+                "sub": username,
+                "sub_profile": "user",  # Keycard claim designating genuine human user
+                "keycard_app_id": "app_agent_a",
+                "aud": client_id,
+                "client_id": client_id,
+                "scope": scope,
+                "sid": sid,
+                "iat": now,
+                "exp": now + expires_in
+            }
+            token = jwt.encode(
+                payload,
+                RSA_PRIVATE_KEY,
+                algorithm="RS256",
+                headers={"kid": KEY_ID}
+            )
+
+            record_audit_event("USER_AUTHENTICATED_IDP", {
+                "user_id": username,
+                "sub_profile": "user",
+                "client_id": client_id,
+                "keycard_app_id": "app_agent_a",
+                "scope": scope,
+                "session_id": sid,
+                "expires_in": expires_in,
+                "decision": "AUTHORIZED"
+            })
+
+            print(f"\033[1;36m[Keycard IdP]\033[0m LOGIN: Human user '{username}' authenticated via IdP on client '{client_id}' (sub_profile: 'user', sid: {sid})", flush=True)
+            self._send_json(200, {
+                "access_token": token,
+                "token_type": "Bearer",
+                "expires_in": expires_in,
+                "scope": scope,
+                "sub": username,
+                "sub_profile": "user",
+                "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
+            })
+            return
+
         if self.path == "/oauth/token":
             grant_type = body.get("grant_type")
 
-            # 1. Initial User Session Minting (client_credentials)
-            if grant_type == "client_credentials":
+            # 1a. User Authentication via Authorization Code Grant (RFC 6749 §4.1)
+            if grant_type == "authorization_code":
                 client_id = body.get("client_id", "agent-a")
                 user_id = body.get("user_id", "alice")
-                scope = body.get("scope", "support:read tasks:delegate incident:investigate audit:write")
-                expires_in = int(body.get("expires_in", 900))  # Supports negative values for testing expired tokens
+                scope = body.get("scope", "support:read tasks:delegate incident:investigate db:read audit:write")
+                expires_in = int(body.get("expires_in", 900))
                 sid = f"sess_{uuid.uuid4().hex[:12]}"
 
                 now = int(time.time())
                 payload = {
                     "iss": base_url,
                     "sub": user_id,
+                    "sub_profile": "user",
+                    "keycard_app_id": "app_agent_a",
                     "aud": client_id,
                     "client_id": client_id,
                     "scope": scope,
@@ -216,21 +269,74 @@ class KeycardHandler(BaseHTTPRequestHandler):
                     headers={"kid": KEY_ID}
                 )
 
-                record_audit_event("USER_SESSION_MINTED", {
+                record_audit_event("USER_AUTHENTICATED_OIDC", {
                     "user_id": user_id,
+                    "sub_profile": "user",
                     "client_id": client_id,
+                    "keycard_app_id": "app_agent_a",
                     "scope": scope,
                     "session_id": sid,
                     "expires_in": expires_in,
                     "decision": "AUTHORIZED"
                 })
 
-                print(f"\033[1;36m[Keycard STS]\033[0m MINT: Issued token for user='{user_id}', client='{client_id}', scope='{scope}' (sid: {sid}, ttl: {expires_in}s)", flush=True)
+                print(f"\033[1;36m[Keycard STS]\033[0m AUTH CODE: Issued User Token for user='{user_id}' on client='{client_id}' (sub_profile: 'user', sid: {sid})", flush=True)
                 self._send_json(200, {
                     "access_token": token,
                     "token_type": "Bearer",
                     "expires_in": expires_in,
                     "scope": scope,
+                    "sub": user_id,
+                    "sub_profile": "user",
+                    "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
+                })
+                return
+
+            # 1b. Application Machine-to-Machine Authentication (client_credentials)
+            elif grant_type == "client_credentials":
+                client_id = body.get("client_id", "agent-a")
+                # When client credentials are used, identity is the application itself (RFC 6749)
+                scope = body.get("scope", "support:read tasks:delegate incident:investigate db:read audit:write")
+                expires_in = int(body.get("expires_in", 900))
+                sid = f"sess_{uuid.uuid4().hex[:12]}"
+
+                now = int(time.time())
+                payload = {
+                    "iss": base_url,
+                    "sub": client_id,  # Application itself is subject
+                    "sub_profile": "app",
+                    "keycard_app_id": f"app_{client_id}",
+                    "aud": client_id,
+                    "client_id": client_id,
+                    "scope": scope,
+                    "sid": sid,
+                    "iat": now,
+                    "exp": now + expires_in
+                }
+                token = jwt.encode(
+                    payload,
+                    RSA_PRIVATE_KEY,
+                    algorithm="RS256",
+                    headers={"kid": KEY_ID}
+                )
+
+                record_audit_event("APP_CREDENTIALS_MINTED", {
+                    "client_id": client_id,
+                    "sub_profile": "app",
+                    "scope": scope,
+                    "session_id": sid,
+                    "expires_in": expires_in,
+                    "decision": "AUTHORIZED"
+                })
+
+                print(f"\033[1;36m[Keycard STS]\033[0m M2M: Issued Application Token for client='{client_id}' (sub_profile: 'app', sid: {sid})", flush=True)
+                self._send_json(200, {
+                    "access_token": token,
+                    "token_type": "Bearer",
+                    "expires_in": expires_in,
+                    "scope": scope,
+                    "sub": client_id,
+                    "sub_profile": "app",
                     "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
                 })
                 return
@@ -391,6 +497,8 @@ class KeycardHandler(BaseHTTPRequestHandler):
                 new_payload = {
                     "iss": base_url,
                     "sub": parent_claims.get("sub", "alice"),
+                    "sub_profile": parent_claims.get("sub_profile", "user"),
+                    "keycard_app_id": f"app_{actor_id}",
                     "aud": audience,
                     "client_id": actor_id,
                     "resource": audience,

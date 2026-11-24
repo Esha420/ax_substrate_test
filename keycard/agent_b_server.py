@@ -366,10 +366,11 @@ class AuditedKeycardBackend(KeycardAuthBackend):
                 print(f"\n{BOLD}{CYAN}[{timestamp()}] [AGENT B MIDDLEWARE] ── INCOMING A2A REQUEST ──{RESET}", flush=True)
                 print(f"  • Endpoint: {path} | Method: {conn.scope.get('method')}", flush=True)
                 print(f"  • Token Verification: {GREEN}VALID RS256 JWKS SIGNATURE{RESET} (Keycard STS Port 8088)", flush=True)
-                print(f"  • Caller Identity: client_id='{user.client_id}' | Root Subject: '{user.sub}'", flush=True)
+                print(f"  • Principal Context: sub='{user.sub}' (Human User), sub_profile='{getattr(user, 'sub_profile', 'user')}'", flush=True)
+                print(f"  • Calling Client Application: client_id='{user.client_id}'", flush=True)
                 print(f"  • Required Scope: {MAGENTA}'incident:investigate'{RESET} | Held Scopes: {user.scopes}", flush=True)
-                print(f"  • Scope Evaluation: {GREEN}GRANTED{RESET}", flush=True)
-                print(f"  • Middleware Decision: {BOLD}{GREEN}AUTHORIZED (200 OK){RESET} ➔ Dispatching to Investigator Executor\n", flush=True)
+                print(f"  • Scope Evaluation: {GREEN}GRANTED (Policy Verified){RESET}", flush=True)
+                print(f"  • Middleware Action: {BOLD}{GREEN}PASSTHROUGH (Permitted){RESET} ➔ Yielding to Investigator Executor (A2A Handler will return response)\n", flush=True)
 
                 # Report successful Agent B authorization to central audit trail
                 try:

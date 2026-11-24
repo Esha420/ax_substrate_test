@@ -147,17 +147,16 @@ run_scenario_1() {
 
     # 2. Ephemeral Token Minting & Token Exchange
     echo -e "\n${BOLD}Step 2: Authentication & Token Exchange (RFC 8693)${NC}"
-    echo -e "2a. Minting initial human session token for Alice on Agent A..."
-    RESP_A=$(curl -s -X POST "$STS_URL/oauth/token" \
+    echo -e "2a. Authenticating human user Alice via Keycard IdP (OIDC Login)..."
+    RESP_A=$(curl -s -X POST "$STS_URL/idp/login" \
       -H "Content-Type: application/json" \
       -d '{
-        "grant_type": "client_credentials",
+        "username": "alice",
         "client_id": "agent-a",
-        "user_id": "alice",
         "scope": "support:read tasks:delegate incident:investigate db:read audit:write"
       }')
     TOKEN_A=$(echo "$RESP_A" | jq -r .access_token)
-    echo -e "${GREEN}✓ Minted initial session token for Alice.${NC}\n"
+    echo -e "${GREEN}✓ Authenticated human user Alice (sub_profile: 'user', sub: 'alice').${NC}\n"
 
     echo -e "2b. RFC 8693 Token Exchange: Agent A exchanges Alice's token for Agent B..."
     RESP_B=$(curl -s -X POST "$STS_URL/oauth/token" \

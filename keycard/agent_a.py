@@ -175,35 +175,55 @@ def interpret_task_intent(user_prompt: str) -> Dict[str, Any]:
 # ==============================================================================
 def obtain_keycard_tokens(user_id: str, client_id: str, scopes: List[str]) -> Dict[str, str]:
     """
-    Automatically authenticates human user (Alice) with Keycard STS
-    and exchanges credentials for Agent B with permission attenuation.
+    1. Human User Authentication:
+       Alice authenticates through the Keycard Identity Provider (IdP) / Keycard Login,
+       receiving a genuine User Access Token (sub_profile='user', sub='alice').
+    2. RFC 8693 Delegated Token Exchange:
+       Agent A uses Alice's User Token as the 'subject_token' to request an attenuated
+       delegated credential specifically for Agent B.
     """
     print_section("AUTHENTICATION & TOKEN EXCHANGE")
 
-    # Step 1: Mint Alice's root session credential
-    print(f"{BOLD}[Keycard STS]{RESET} Minting initial root session token for '{user_id}' on '{client_id}'...")
+    # Step 1: User authenticates via Keycard IdP
+    print(f"{BOLD}[Keycard IdP]{RESET} Authenticating human user '{user_id}' on application client '{client_id}'...")
     root_scopes = "support:read tasks:delegate incident:investigate db:read audit:write"
     r1 = httpx.post(
-        f"{STS_URL}/oauth/token",
+        f"{STS_URL}/idp/login",
         json={
-            "grant_type": "client_credentials",
+            "username": user_id,
             "client_id": client_id,
-            "user_id": user_id,
             "scope": root_scopes
         },
         timeout=5.0
     )
     if r1.status_code != 200:
-        raise RuntimeError(f"Failed to mint session token on STS: {r1.text}")
+        # Fallback to authorization_code grant on /oauth/token
+        r1 = httpx.post(
+            f"{STS_URL}/oauth/token",
+            json={
+                "grant_type": "authorization_code",
+                "client_id": client_id,
+                "user_id": user_id,
+                "scope": root_scopes
+            },
+            timeout=5.0
+        )
+    if r1.status_code != 200:
+        raise RuntimeError(f"Failed to authenticate user '{user_id}' with IdP: {r1.text}")
+
     token_a = r1.json()["access_token"]
     claims_a = jwt.decode(token_a, options={"verify_signature": False})
     sid = claims_a.get("sid", "unknown")
-    print(f"  • Initial Credential: {GREEN}ISSUED{RESET} (Session: {DIM}{sid}{RESET})")
-    print(f"  • Root Scopes:        {MAGENTA}{root_scopes}{RESET}")
+    sub_profile = claims_a.get("sub_profile", "user")
+    print(f"  • User Credential:    {GREEN}AUTHENTICATED via IdP{RESET} (sub='{user_id}', sub_profile='{sub_profile}')")
+    print(f"  • Session ID:         {DIM}{sid}{RESET}")
+    print(f"  • User Root Scopes:   {MAGENTA}{root_scopes}{RESET}")
 
     # Step 2: RFC 8693 Token Exchange for Agent B
     agent_b_scopes = "incident:investigate db:read audit:write"
     print(f"\n{BOLD}[Keycard STS]{RESET} Performing RFC 8693 Token Exchange for Agent B ({AGENT_B_URL})...")
+    print(f"  • Subject Token:      {CYAN}Alice's User Token{RESET} (Delegation Lineage Root)")
+    print(f"  • Requesting Actor:   {YELLOW}{client_id}{RESET} (Agent A)")
     r2 = httpx.post(
         f"{STS_URL}/oauth/token",
         json={
@@ -219,9 +239,9 @@ def obtain_keycard_tokens(user_id: str, client_id: str, scopes: List[str]) -> Di
         raise RuntimeError(f"Token exchange for Agent B failed: {r2.text}")
     token_b = r2.json()["access_token"]
     print(f"  • Exchanged Token B:  {GREEN}ACQUIRED{RESET}")
-    print(f"  • Audience:           {CYAN}{AGENT_B_URL}{RESET}")
+    print(f"  • Target Audience:    {CYAN}{AGENT_B_URL}{RESET}")
     print(f"  • Attenuated Scopes:  {MAGENTA}{agent_b_scopes}{RESET}")
-    print(f"  • Actor Lineage:      {BOLD}[{user_id} -> {client_id} -> {AGENT_B_URL}]{RESET}")
+    print(f"  • Delegation Lineage: {BOLD}[{user_id} (User) -> {client_id} (Actor) -> {AGENT_B_URL}]{RESET}")
 
     return {
         "token_a": token_a,
@@ -352,13 +372,12 @@ def run_unauthorized_operation_demo():
     print_section("SECURITY TEST: UNAUTHORIZED OPERATION ATTEMPT (HTTP 403)")
     print(f"{BOLD}[Scenario]{RESET} Agent A attempts to delegate prohibited scope '{RED}db:delete{RESET}' to Agent B.")
     
-    # Mint token with read permissions
+    # Authenticate Alice with read permissions via IdP
     r1 = httpx.post(
-        f"{STS_URL}/oauth/token",
+        f"{STS_URL}/idp/login",
         json={
-            "grant_type": "client_credentials",
+            "username": "alice",
             "client_id": "agent-a",
-            "user_id": "alice",
             "scope": "support:read incident:investigate db:read"
         },
         timeout=3.0
