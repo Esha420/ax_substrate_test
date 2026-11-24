@@ -11,36 +11,36 @@ Rather than relying on static scripts, mock payloads, or shared root API keys, t
 ```mermaid
 flowchart TD
     subgraph Human["Human Layer"]
-        Alice["Alice (Human Principal)\nAuthenticates via Keycard IdP (OIDC Login)\nsub='alice', sub_profile='user'"]
+        Alice["Alice (Human Principal)<br/>Authenticates via Keycard IdP (OIDC Login)<br/>sub='alice', sub_profile='user'"]
     end
 
     subgraph Orchestration["Client & Orchestration Layer"]
-        AgentA["Agent A: Orchestrator Client (agent_a.py)\n• Natural Language Understanding (NVIDIA Nemotron LLM)\n• Task & Scope Identification\n• Submits Alice's User Token for Delegation"]
+        AgentA["Agent A: Orchestrator Client (agent_a.py)<br/>- Natural Language Understanding (NVIDIA Nemotron LLM)<br/>- Task & Scope Identification<br/>- Submits Alice's User Token for Delegation"]
     end
 
     subgraph SecurityFabric["Keycard Security Fabric (Port 8088)"]
-        IdP["Keycard IdP / Login Endpoint (/idp/login)\n• Authenticates Human User Alice\n• Issues User Token with sub_profile='user'"]
-        STS["Keycard Local STS Server (/oauth/token)\n• RFC 8414 OAuth Metadata (/.well-known/oauth-authorization-server)\n• Dynamic RS256 JWKS (/oauth/jwks)\n• RFC 8693 Token Exchange (subject_token -> delegated token)\n• Central Session Revocation (/oauth/revoke)\n• Immutable Delegation Audit Ledger (/audit)"]
+        IdP["Keycard IdP / Login Endpoint (/idp/login)<br/>- Authenticates Human User Alice<br/>- Issues User Token with sub_profile='user'"]
+        STS["Keycard Local STS Server (/oauth/token)<br/>- RFC 8414 OAuth Metadata<br/>- Dynamic RS256 JWKS (/oauth/jwks)<br/>- RFC 8693 Token Exchange<br/>- Central Session Revocation (/oauth/revoke)<br/>- Immutable Delegation Audit Ledger (/audit)"]
     end
 
     subgraph AgentB_Service["Agent B Microservice (Port 9002)"]
-        B_MW["KeycardAuthBackend Middleware\n• Intercepts Inbound Requests Locally\n• Validates RS256 Signature against STS JWKS\n• Strictly Enforces 'incident:investigate' & 'db:read'\n• Yields Control to Executor (PASSTHROUGH)"]
-        B_EXEC["IncidentInvestigatorExecutor\n• NVIDIA Nemotron LLM Reasoning\n• Findings Synthesis & Containment Planning\n• Autonomous DelegationClient (Hop 2 Exchange)"]
-        B_MW -->|Permitted / Passthrough| B_EXEC
+        B_MW["KeycardAuthBackend Middleware<br/>- Intercepts Inbound Requests Locally<br/>- Validates RS256 Signature against STS JWKS<br/>- Strictly Enforces 'incident:investigate' and 'db:read'<br/>- Yields Control to Executor (PASSTHROUGH)"]
+        B_EXEC["IncidentInvestigatorExecutor<br/>- NVIDIA Nemotron LLM Reasoning<br/>- Findings Synthesis and Containment Planning<br/>- Autonomous DelegationClient (Hop 2 Exchange)"]
+        B_MW -->|"Permitted (Passthrough)"| B_EXEC
     end
 
     subgraph AgentC_Service["Agent C Microservice (Port 9003)"]
-        C_MW["KeycardAuthBackend Middleware\n• Intercepts Inbound Requests Locally\n• Validates RS256 Signature against STS JWKS\n• Strictly Enforces 'audit:write' (403 if Missing)\n• Validates Nested Actor Lineage"]
-        C_EXEC["AuditVaultSignerExecutor\n• Canonical SHA-256 Evidence Digest\n• RS256 RSA Private Key Signature\n• Public Verification Endpoint (/verify)"]
-        C_MW -->|Permitted / Passthrough| C_EXEC
+        C_MW["KeycardAuthBackend Middleware<br/>- Intercepts Inbound Requests Locally<br/>- Validates RS256 Signature against STS JWKS<br/>- Strictly Enforces 'audit:write' (403 if Missing)<br/>- Validates Nested Actor Lineage"]
+        C_EXEC["AuditVaultSignerExecutor<br/>- Canonical SHA-256 Evidence Digest<br/>- RS256 RSA Private Key Signature<br/>- Public Verification Endpoint (/verify)"]
+        C_MW -->|"Permitted (Passthrough)"| C_EXEC
     end
 
     Alice -->|"1. User Authentication (OIDC Login)"| IdP
     IdP -->|"2. Genuine User Token (sub_profile='user')"| Alice
     Alice -->|"3. Natural Language Task + User Token"| AgentA
-    AgentA <-->|"4. RFC 8693 Token Exchange (subject_token=Alice Token)"| STS
+    AgentA -->|"4. RFC 8693 Token Exchange (subject_token=Alice Token)"| STS
     AgentA -->|"5. POST /a2a/jsonrpc (Bearer Token B)"| B_MW
-    B_EXEC <-->|"6. Autonomous Token Exchange for Token C"| STS
+    B_EXEC -->|"6. Autonomous Token Exchange for Token C"| STS
     B_EXEC -->|"7. POST /a2a/jsonrpc (Bearer Token C)"| C_MW
     C_EXEC -->|"8. Verifiable Evidence Seal"| B_EXEC
     B_EXEC -->|"9. Complete Sealed Report"| AgentA
@@ -63,16 +63,16 @@ flowchart LR
     end
 
     subgraph Agent_B["Agent B (Receiver - Port 9002)"]
-        B_MW["KeycardAuthBackend Middleware\n[Runs on EVERY incoming request]"]
+        B_MW["KeycardAuthBackend Middleware<br/>(Runs on EVERY incoming request)"]
         B_App["Agent Logic / LLM Executor"]
-        B_MW -->|Valid RS256 & Scopes\n(Yield / Passthrough)| B_App
-        B_MW -->|Invalid Signature or Expired| Deny401["401 Unauthorized"]
-        B_MW -->|Missing Required Scope| Deny403["403 Forbidden"]
-        B_App -->|Execution Successful| Resp200["HTTP 200 OK (A2A JSON-RPC)"]
+        B_MW -->|"Valid RS256 and Scopes (Yield / Passthrough)"| B_App
+        B_MW -->|"Invalid Signature or Expired"| Deny401["401 Unauthorized"]
+        B_MW -->|"Missing Required Scope"| Deny403["403 Forbidden"]
+        B_App -->|"Execution Successful"| Resp200["HTTP 200 OK (A2A JSON-RPC)"]
     end
 
     subgraph OutOfBand["Out-of-Band Authority"]
-        STS["Keycard STS (Port 8088)\n• Public JWKS (/oauth/jwks)\n• Revocation Registry"]
+        STS["Keycard STS (Port 8088)<br/>- Public JWKS (/oauth/jwks)<br/>- Revocation Registry"]
     end
 
     A_Out -->|"Direct HTTP POST /a2a/jsonrpc (Bearer JWT)"| B_MW
@@ -175,7 +175,7 @@ sequenceDiagram
     Alice->>IdP: 1. User Login (OIDC Authentication)
     IdP-->>Alice: Alice's User Token (sub='alice', sub_profile='user')
 
-    Alice->>A: 2. "Investigate suspicious DB access on production database and save findings to audit vault"
+    Alice->>A: 2. Task: Investigate suspicious DB access on production database and save findings to audit vault
     Note over A: NVIDIA Nemotron LLM parses intent:<br/>Operations: [read_db, investigate, write_vault]<br/>Scopes: [incident:investigate, db:read, audit:write]
 
     A->>STS: 3. POST /oauth/token (RFC 8693 Token Exchange, subject_token=Alice User Token)
@@ -185,7 +185,7 @@ sequenceDiagram
     Note over B_MW: Middleware validates RS256 signature against STS JWKS<br/>Checks audience=9002, scopes=['incident:investigate', 'db:read']<br/>Action: PASSTHROUGH (Permitted)
     B_MW->>B: Dispatch to Investigator Executor
 
-    Note over B: Nemotron LLM reasons on database logs<br/>Identifies anomalous queries & formulates containment
+    Note over B: Nemotron LLM reasons on database logs<br/>Identifies anomalous queries and formulates containment
 
     Note over B: Autonomous Hop 2 Triggered
     B->>STS: 6. POST /oauth/token (RFC 8693 Token Exchange for Agent C)
@@ -200,7 +200,7 @@ sequenceDiagram
     B-->>A: Complete Investigation Report with Embedded Seal
     
     Note over A: Verifies signature against Agent C public key (/vault/public_key)<br/>Confirms 6-event chronological STS audit trail
-    A-->>Alice: Final Verified Report (Tamper-Proof & Audit-Ready)
+    A-->>Alice: Final Verified Report (Tamper-Proof and Audit-Ready)
 ```
 
 ---
