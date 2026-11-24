@@ -301,7 +301,13 @@ class AuditedKeycardBackend(KeycardAuthBackend):
                 except Exception:
                     pass
 
-                print(f"{GREEN}[Agent C | {timestamp()}]{RESET} AUTH: Verified RS256 Keycard token! sub='{user.sub}', client='{user.client_id}', scopes={user.scopes}", flush=True)
+                print(f"\n{BOLD}{CYAN}[{timestamp()}] [AGENT C MIDDLEWARE] ── INCOMING A2A REQUEST ──{RESET}", flush=True)
+                print(f"  • Endpoint: {path} | Method: {conn.scope.get('method')}", flush=True)
+                print(f"  • Token Verification: {GREEN}VALID RS256 JWKS SIGNATURE{RESET} (Keycard STS Port 8088)", flush=True)
+                print(f"  • Caller Identity: client_id='{user.client_id}' | Root Subject: '{user.sub}'", flush=True)
+                print(f"  • Required Scope: {MAGENTA}'audit:write'{RESET} | Held Scopes: {user.scopes}", flush=True)
+                print(f"  • Scope Evaluation: {GREEN}GRANTED (Permission Attenuation Verified){RESET}", flush=True)
+                print(f"  • Middleware Decision: {BOLD}{GREEN}AUTHORIZED (200 OK){RESET} ➔ Dispatching to Audit Vault Signer\n", flush=True)
 
                 # Report successful Agent C authorization to central audit trail
                 try:

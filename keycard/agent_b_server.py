@@ -180,7 +180,7 @@ def analyze_incident_with_ai(query: str) -> Dict[str, str]:
                 "temperature": 0.2,
                 "max_tokens": 1024
             },
-            timeout=12.0
+            timeout=30.0
         )
         if resp.status_code == 200:
             choice = resp.json()["choices"][0]["message"]
@@ -363,7 +363,13 @@ class AuditedKeycardBackend(KeycardAuthBackend):
                 except Exception:
                     pass
 
-                print(f"{GREEN}[Agent B | {timestamp()}]{RESET} AUTH: Verified RS256 Keycard token! sub='{user.sub}', client='{user.client_id}', scopes={user.scopes}", flush=True)
+                print(f"\n{BOLD}{CYAN}[{timestamp()}] [AGENT B MIDDLEWARE] ── INCOMING A2A REQUEST ──{RESET}", flush=True)
+                print(f"  • Endpoint: {path} | Method: {conn.scope.get('method')}", flush=True)
+                print(f"  • Token Verification: {GREEN}VALID RS256 JWKS SIGNATURE{RESET} (Keycard STS Port 8088)", flush=True)
+                print(f"  • Caller Identity: client_id='{user.client_id}' | Root Subject: '{user.sub}'", flush=True)
+                print(f"  • Required Scope: {MAGENTA}'incident:investigate'{RESET} | Held Scopes: {user.scopes}", flush=True)
+                print(f"  • Scope Evaluation: {GREEN}GRANTED{RESET}", flush=True)
+                print(f"  • Middleware Decision: {BOLD}{GREEN}AUTHORIZED (200 OK){RESET} ➔ Dispatching to Investigator Executor\n", flush=True)
 
                 # Report successful Agent B authorization to central audit trail
                 try:
